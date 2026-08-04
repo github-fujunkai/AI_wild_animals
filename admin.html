@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>野保平台 · 多租户管理端（交互原型）</title>
+<style>
+/* ============================================================
+   野保平台 · 多租户管理端 交互原型
+   设计系统：森林绿主题 / 专业后台风格 / 纯原生实现，无外部依赖
+   ============================================================ */
+:root{
+  --primary:#2E7D5B; --primary-dark:#1B5E40; --primary-deep:#134A33; --primary-light:#E8F3EE;
+  --sidebar-bg:#16382A; --sidebar-hover:#1F4A38; --sidebar-text:#9DBBAD; --sidebar-active:#2E7D5B;
+  --bg:#F4F6F5; --card:#FFFFFF; --border:#E5EAE7; --border-strong:#D5DDD8;
+  --text:#1F2D27; --text-2:#5B6B63; --text-3:#93A199;
+  --danger:#D64545; --danger-bg:#FBEDED; --warning:#E8960C; --warning-bg:#FDF3E3;
+  --success:#2E7D5B; --success-bg:#E8F3EE; --info:#2D6FB8; --info-bg:#EBF2FA;
+  --gray:#8A9690; --gray-bg:#F0F2F1;
+  --radius:10px; --radius-sm:6px;
+  --shadow:0 2px 8px rgba(22,56,42,.06); --shadow-lg:0 12px 32px rgba(22,56,42,.16);
+  --font:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Segoe UI',sans-serif;
+  --mono:'SF Mono',Consolas,'Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px;color:var(--text)}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:#CBD5CF;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- 通用图标 ---------- */
+.icon{display:inline-block;vertical-align:-3px;flex-shrink:0}
+
+/* ---------- 按钮 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 16px;
+  border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:all .16s ease;white-space:nowrap;border:1px solid transparent}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-primary:disabled{background:var(--primary);opacity:.55}
+.btn-default{background:#fff;color:var(--text-2);border-color:var(--border-strong)}
+.btn-default:hover{border-color:var(--primary);color:var(--primary)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#B93636}
+.btn-danger-ghost{background:var(--danger-bg);color:var(--danger)}
+.btn-danger-ghost:hover{background:#F6DADA}
+.btn-ghost{color:var(--primary);background:var(--primary-light)}
+.btn-ghost:hover{background:#D9EAE2}
+.btn-sm{height:28px;padding:0 10px;font-size:12px}
+.btn-sm svg{width:13px;height:13px}
+.btn-lg{height:40px;padding:0 22px;font-size:14px}
+.btn-block{width:100%}
+.link-btn{color:var(--primary);font-size:13px;padding:2px 6px;border-radius:4px;transition:background .15s}
+.link-btn:hover{background:var(--primary-light)}
+.link-btn.danger{color:var(--danger)}
+.link-btn.danger:hover{background:var(--danger-bg)}
+.link-btn.gray{color:var(--text-3)}
+.link-btn.gray:hover{background:var(--gray-bg);color:var(--text-2)}
+.btn-loading{pointer-events:none}
+
+/* ---------- 表单 ---------- */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:var(--text-2);margin-bottom:6px;font-weight:500}
+.field label .req{color:var(--danger);margin-left:2px}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-wrap .icon{position:absolute;left:11px;color:var(--text-3);width:16px;height:16px;pointer-events:none}
+.input-wrap .input-eye{position:absolute;right:8px;color:var(--text-3);padding:4px;border-radius:4px;display:flex}
+.input-wrap .input-eye:hover{color:var(--primary)}
+.input,.select,.textarea{width:100%;height:36px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);
+  padding:0 11px;outline:none;transition:border-color .15s,box-shadow .15s;background:#fff}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,91,.12)}
+.input.has-icon{padding-left:36px}
+.input.err{border-color:var(--danger);box-shadow:0 0 0 3px rgba(214,69,69,.1)}
+.input.err:focus{border-color:var(--danger);box-shadow:0 0 0 3px rgba(214,69,69,.12)}
+.textarea{height:auto;min-height:72px;padding:9px 11px;resize:vertical;line-height:1.6}
+.input:disabled,.select:disabled{background:#F6F8F7;color:var(--text-3);cursor:not-allowed}
+.err-msg{display:none;color:var(--danger);font-size:12px;margin-top:5px}
+.input.err + .err-msg{display:block}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 16px}
+.hint{font-size:12px;color:var(--text-3);margin-top:5px;line-height:1.5}
+.help-note{display:flex;gap:8px;align-items:flex-start;background:var(--info-bg);border:1px solid #D3E3F5;
+  border-radius:var(--radius-sm);padding:10px 12px;color:#2A5B8F;font-size:12.5px;line-height:1.6;margin-bottom:16px}
+.help-note .icon{width:15px;height:15px;margin-top:1px;color:var(--info)}
+
+/* 复选 */
+.checkbox{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--text-2);user-select:none}
+.checkbox input{width:15px;height:15px;accent-color:var(--primary);cursor:pointer}
+
+/* 开关 */
+.switch{position:relative;display:inline-block;width:38px;height:21px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .slider{position:absolute;inset:0;background:#C9D1CC;border-radius:21px;transition:.2s;cursor:pointer}
+.switch .slider:before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch input:checked + .slider{background:var(--primary)}
+.switch input:checked + .slider:before{transform:translateX(17px)}
+.switch input:disabled + .slider{opacity:.5;cursor:not-allowed}
+.switch-label{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+
+/* ---------- 徽章 ---------- */
+.badge{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:500;white-space:nowrap}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge-success{background:var(--success-bg);color:var(--primary)}
+.badge-warning{background:var(--warning-bg);color:#C07B08}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.badge-info{background:var(--info-bg);color:var(--info)}
+.badge-gray{background:var(--gray-bg);color:var(--gray)}
+.badge-role{background:var(--primary-light);color:var(--primary-dark);border-radius:4px;height:20px;padding:0 7px;font-size:12px}
+
+/* ---------- 卡片 ---------- */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.page{padding:4px 2px 40px;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.page-title h1{font-size:19px;font-weight:600;color:var(--text)}
+.page-title p{font-size:13px;color:var(--text-3);margin-top:5px}
+
+/* 统计卡 */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px}
+.stat-card{display:flex;align-items:center;gap:14px;padding:18px 20px;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);transition:transform .15s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-icon svg{width:22px;height:22px}
+.stat-icon.green{background:var(--success-bg);color:var(--primary)}
+.stat-icon.orange{background:var(--warning-bg);color:var(--warning)}
+.stat-icon.red{background:var(--danger-bg);color:var(--danger)}
+.stat-icon.blue{background:var(--info-bg);color:var(--info)}
+.stat-info .stat-num{font-size:24px;font-weight:700;line-height:1.1}
+.stat-info .stat-label{font-size:12.5px;color:var(--text-3);margin-top:4px}
+
+/* ---------- 工具栏 ---------- */
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar .search-box{position:relative;display:flex;align-items:center}
+.toolbar .search-box .icon{position:absolute;left:10px;color:var(--text-3);width:15px;height:15px;pointer-events:none}
+.toolbar .search-box input{width:240px;height:34px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 34px 0 33px;outline:none;transition:.15s}
+.toolbar .search-box input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,91,.12)}
+.toolbar .spacer{flex:1}
+.toolbar .select{width:auto;height:34px;min-width:120px;font-size:13px}
+.filter-pill{display:inline-flex;align-items:center;gap:5px;height:34px;padding:0 12px;border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm);background:#fff;color:var(--text-2);font-size:13px}
+.filter-pill:hover{border-color:var(--primary);color:var(--primary)}
+
+/* ---------- 表格 ---------- */
+.table-wrap{overflow-x:auto}
+table.table{width:100%;border-collapse:collapse}
+.table th{background:#F8FAF9;text-align:left;font-size:12.5px;color:var(--text-2);font-weight:600;
+  padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+.table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+.table tbody tr{transition:background .12s}
+.table tbody tr:hover{background:#FAFCFB}
+.table tbody tr:last-child td{border-bottom:none}
+.table .cell-main{font-weight:600;color:var(--text)}
+.table .cell-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.table .actions{white-space:nowrap;display:flex;gap:2px}
+.table .num{font-variant-numeric:tabular-nums}
+.table-empty{padding:48px 0;text-align:center;color:var(--text-3)}
+.table-empty .icon{width:40px;height:40px;color:#C7D1CB;margin-bottom:10px}
+.table-empty p{font-size:13px}
+.tenant-tag{display:flex;align-items:center;gap:9px}
+.tenant-tag .t-icon{width:32px;height:32px;border-radius:8px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tenant-tag .t-icon svg{width:16px;height:16px}
+
+/* 配额进度 */
+.quota{min-width:120px}
+.quota .quota-top{display:flex;justify-content:space-between;font-size:12px;color:var(--text-2);margin-bottom:5px;font-variant-numeric:tabular-nums}
+.quota .quota-bar{height:5px;background:#E8EDEA;border-radius:3px;overflow:hidden}
+.quota .quota-bar i{display:block;height:100%;border-radius:3px;background:var(--primary);transition:width .3s}
+.quota .quota-bar.warn i{background:var(--warning)}
+.quota .quota-bar.danger i{background:var(--danger)}
+
+/* 分页 */
+.pagination{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding:14px 4px 0;flex-wrap:wrap}
+.pagination .pg-info{font-size:12.5px;color:var(--text-3);margin-right:auto}
+.pagination button{min-width:30px;height:30px;padding:0 8px;border:1px solid var(--border-strong);border-radius:6px;
+  background:#fff;color:var(--text-2);font-size:13px;transition:.15s}
+.pagination button:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.pagination button.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.pagination button:disabled{opacity:.45;cursor:not-allowed}
+
+/* ---------- 侧边栏 ---------- */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:232px;background:var(--sidebar-bg);color:var(--sidebar-text);
+  display:flex;flex-direction:column;z-index:50;transition:width .2s}
+.logo-area{display:flex;align-items:center;gap:10px;padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.logo-mark{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#3BA37C,#1B5E40);
+  display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.logo-mark svg{width:20px;height:20px}
+.logo-text{line-height:1.25}
+.logo-text b{display:block;color:#fff;font-size:16px;font-weight:600;letter-spacing:.5px}
+.logo-text span{font-size:11px;color:#7DA08F;letter-spacing:1px}
+.side-nav{flex:1;overflow-y:auto;padding:12px 0 20px}
+.nav-group-title{font-size:11.5px;color:#6E9180;padding:14px 20px 6px;letter-spacing:1px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;margin:2px 10px;border-radius:8px;
+  color:var(--sidebar-text);font-size:13.5px;cursor:pointer;transition:all .15s;user-select:none}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item:hover{background:var(--sidebar-hover);color:#E4F0EA}
+.nav-item.active{background:var(--sidebar-active);color:#fff;font-weight:500}
+.sidebar-foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.07);font-size:11.5px;color:#6E9180;line-height:1.7}
+
+/* ---------- 主区域 ---------- */
+.main{margin-left:232px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:58px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:40}
+.breadcrumb{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text-3)}
+.breadcrumb .crumb-sep{color:#C9D1CC}
+.breadcrumb .crumb-cur{color:var(--text-2);font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:6px}
+.top-icon-btn{position:relative;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-2);transition:.15s}
+.top-icon-btn:hover{background:var(--gray-bg);color:var(--text)}
+.top-icon-btn .icon{width:19px;height:19px}
+.top-icon-btn .notify-dot{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid #fff}
+.user-menu-btn{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:8px;cursor:pointer;transition:.15s}
+.user-menu-btn:hover{background:var(--gray-bg)}
+.avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#3BA37C,#1B5E40);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:600;flex-shrink:0}
+.user-menu-btn .u-name{font-size:13px;font-weight:500;color:var(--text)}
+.user-menu-btn .icon{width:14px;height:14px;color:var(--text-3)}
+.dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:var(--shadow-lg);min-width:190px;padding:6px;z-index:60;animation:fadeIn .16s ease;display:none}
+.dropdown.open{display:block}
+.dropdown .dd-head{padding:10px 12px;border-bottom:1px solid var(--border);margin-bottom:5px}
+.dropdown .dd-head b{display:block;font-size:13.5px}
+.dropdown .dd-head span{font-size:12px;color:var(--text-3)}
+.dropdown .dd-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;font-size:13px;color:var(--text-2);cursor:pointer;transition:.12s}
+.dropdown .dd-item:hover{background:var(--gray-bg);color:var(--text)}
+.dropdown .dd-item .icon{width:15px;height:15px}
+.dropdown .dd-item.danger{color:var(--danger)}
+.dropdown .dd-item.danger:hover{background:var(--danger-bg)}
+.dropdown .dd-sep{height:1px;background:var(--border);margin:5px 8px}
+.dropdown .dd-notify{display:flex;gap:9px;padding:9px 12px;border-radius:7px;cursor:pointer}
+.dropdown .dd-notify:hover{background:var(--gray-bg)}
+.dropdown .dd-notify .n-dot{width:7px;height:7px;border-radius:50%;background:var(--info);margin-top:5px;flex-shrink:0}
+.dropdown .dd-notify .n-dot.read{background:#C9D1CC}
+.dropdown .dd-notify b{font-size:12.5px;font-weight:500;display:block}
+.dropdown .dd-notify span{font-size:11.5px;color:var(--text-3)}
+.content{padding:22px 24px;flex:1}
+.prototype-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#7DA08F;border:1px solid rgba(255,255,255,.15);
+  border-radius:20px;padding:2px 9px;margin-bottom:10px}
+
+/* ---------- 登录页 ---------- */
+#login-view{display:flex;min-height:100vh;background:var(--bg)}
+.login-left{flex:1.15;background:linear-gradient(150deg,#0F2E20 0%,#1B5E40 55%,#2E7D5B 100%);color:#fff;
+  display:flex;flex-direction:column;justify-content:center;padding:60px 70px;position:relative;overflow:hidden}
+.login-left::before{content:'';position:absolute;width:520px;height:520px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.07),transparent 65%);top:-180px;right:-160px}
+.login-left::after{content:'';position:absolute;width:380px;height:380px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.05),transparent 65%);bottom:-140px;left:-120px}
+.login-left .ll-inner{position:relative;z-index:1;max-width:460px}
+.ll-logo{display:flex;align-items:center;gap:13px;margin-bottom:48px}
+.ll-logo .logo-mark{width:44px;height:44px;border-radius:11px;background:rgba(255,255,255,.14);backdrop-filter:blur(4px)}
+.ll-logo .logo-mark svg{width:24px;height:24px}
+.ll-logo b{font-size:21px;font-weight:600;letter-spacing:1px}
+.ll-logo span{display:block;font-size:11.5px;color:rgba(255,255,255,.6);letter-spacing:2px;margin-top:2px}
+.ll-title{font-size:34px;font-weight:700;line-height:1.35;margin-bottom:14px;letter-spacing:1px}
+.ll-sub{font-size:15px;color:rgba(255,255,255,.72);line-height:1.8;margin-bottom:44px}
+.ll-points{display:flex;flex-direction:column;gap:14px}
+.ll-point{display:flex;align-items:center;gap:11px;font-size:13.5px;color:rgba(255,255,255,.85)}
+.ll-point .icon{width:17px;height:17px;color:#6FCF9F}
+.login-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px}
+.login-card{width:100%;max-width:400px;background:#fff;border:1px solid var(--border);border-radius:16px;
+  box-shadow:var(--shadow-lg);padding:40px 38px}
+.login-card h2{font-size:21px;font-weight:600;margin-bottom:6px}
+.login-card .lc-sub{font-size:13px;color:var(--text-3);margin-bottom:30px}
+.login-card .field label{font-size:13px}
+.login-options{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.login-options a{font-size:12.5px;color:var(--primary)}
+.login-options a:hover{text-decoration:underline}
+.login-hint{margin-top:20px;text-align:center;font-size:12.5px;color:var(--text-3);background:var(--gray-bg);
+  border-radius:8px;padding:9px;font-family:var(--mono)}
+.login-card .err-msg{display:block;visibility:hidden}
+.login-card .field.has-err .err-msg{visibility:visible}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.shake{animation:shake .4s ease}
+
+/* ---------- 弹窗 ---------- */
+.dialog-overlay{position:fixed;inset:0;background:rgba(15,30,22,.5);z-index:100;display:flex;align-items:flex-start;
+  justify-content:center;padding:6vh 20px 20px;animation:fadeIn .18s ease}
+.dialog{background:#fff;border-radius:14px;box-shadow:var(--shadow-lg);width:100%;max-width:560px;
+  max-height:88vh;display:flex;flex-direction:column;animation:dlgIn .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes dlgIn{from{opacity:0;transform:translateY(-14px) scale(.98)}to{opacity:1;transform:none}}
+.dialog.wide{max-width:680px}
+.dialog.narrow{max-width:440px}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--border)}
+.dialog-head h3{font-size:16px;font-weight:600}
+.dialog-close{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--text-3);transition:.15s}
+.dialog-close:hover{background:var(--gray-bg);color:var(--text)}
+.dialog-close .icon{width:16px;height:16px}
+.dialog-body{padding:20px 22px;overflow-y:auto;flex:1;font-size:13.5px;line-height:1.7}
+.dialog-foot{display:flex;justify-content:flex-end;gap:10px;padding:15px 22px;border-top:1px solid var(--border);background:#FAFCFB;border-radius:0 0 14px 14px}
+
+/* 危险确认 */
+.danger-box{display:flex;gap:14px;align-items:flex-start}
+.danger-box .db-icon{width:42px;height:42px;border-radius:10px;background:var(--danger-bg);color:var(--danger);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.danger-box .db-icon svg{width:20px;height:20px}
+.danger-box b{font-size:15px;display:block;margin-bottom:6px}
+.danger-box p{font-size:13px;color:var(--text-2);line-height:1.8}
+.danger-box .warn-line{background:var(--danger-bg);color:var(--danger);border-radius:8px;padding:9px 12px;
+  font-size:12.5px;margin-top:10px;line-height:1.6}
+.confirm-check{margin-top:16px}
+.confirm-check label{font-size:13px;color:var(--text-2);cursor:pointer;display:flex;align-items:center;gap:8px}
+.confirm-input{margin-top:12px}
+.confirm-input label{font-size:12.5px;color:var(--text-3);display:block;margin-bottom:6px}
+.confirm-input input{width:100%;height:36px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 11px;outline:none;transition:.15s;font-size:13px}
+.confirm-input input:focus{border-color:var(--danger);box-shadow:0 0 0 3px rgba(214,69,69,.1)}
+.confirm-input input.matched{border-color:var(--success);box-shadow:0 0 0 3px rgba(46,125,91,.1)}
+
+/* 向导步骤 */
+.steps{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-3)}
+.step .step-num{width:26px;height:26px;border-radius:50%;background:var(--gray-bg);color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;transition:.2s}
+.step.active{color:var(--primary);font-weight:500}
+.step.active .step-num{background:var(--primary);color:#fff}
+.step.done{color:var(--primary)}
+.step.done .step-num{background:var(--success-bg);color:var(--primary)}
+.step-line{flex:1;height:2px;background:var(--border);min-width:24px;border-radius:1px}
+.step-line.done{background:var(--primary)}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{padding:5px 13px;border:1px solid var(--border-strong);border-radius:16px;font-size:12.5px;color:var(--text-2);cursor:pointer;transition:.15s;background:#fff}
+.chip:hover{border-color:var(--primary);color:var(--primary)}
+.chip.on{background:var(--primary-light);border-color:var(--primary);color:var(--primary-dark);font-weight:500}
+.chip-input{width:100%;height:36px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 11px;outline:none}
+.chip-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,91,.12)}
+
+/* 权限树 */
+.perm-tree{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;background:#FAFCFB}
+.perm-tree .pt-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.perm-tree .pt-title .icon{width:15px;height:15px;color:var(--primary)}
+.perm-tree .pt-group{margin-bottom:10px;border:1px solid var(--border);border-radius:8px;background:#fff;overflow:hidden}
+.perm-tree .pt-group-head{display:flex;align-items:center;gap:9px;padding:9px 13px;background:#F5F8F6;font-size:13px;font-weight:500;cursor:pointer;user-select:none}
+.perm-tree .pt-group-head:hover{background:#EEF4F0}
+.perm-tree .pt-group-head input{width:15px;height:15px;accent-color:var(--primary);cursor:pointer}
+.perm-tree .pt-children{display:flex;flex-wrap:wrap;gap:4px 14px;padding:9px 13px 11px}
+.perm-tree .pt-child{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-2);cursor:pointer}
+.perm-tree .pt-child input{width:14px;height:14px;accent-color:var(--primary);cursor:pointer}
+.perm-tree .pt-children.empty{padding:8px 13px;color:var(--text-3);font-size:12.5px}
+
+/* ---------- Toast ---------- */
+#toast-root{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
+.toast{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--border);border-left:4px solid var(--primary);
+  border-radius:9px;box-shadow:var(--shadow-lg);padding:11px 16px;min-width:260px;max-width:360px;font-size:13px;
+  animation:toastIn .25s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.toast.out{animation:toastOut .25s ease forwards}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
+.toast .icon{width:17px;height:17px;flex-shrink:0}
+.toast-success .icon{color:var(--success)}
+.toast-error .icon{color:var(--danger)}
+.toast-warning .icon{color:var(--warning)}
+.toast-info .icon{color:var(--info)}
+
+/* ---------- 构建中占位 ---------- */
+.build-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:110px 0;color:var(--text-3)}
+.build-placeholder .icon{width:52px;height:52px;color:#C7D1CB;margin-bottom:16px}
+.build-placeholder b{font-size:16px;color:var(--text-2);margin-bottom:8px}
+.build-placeholder span{font-size:13px}
+
+/* ---------- 左右布局（权限分配） ---------- */
+.split-layout{display:grid;grid-template-columns:250px 1fr;gap:16px;align-items:start}
+.role-list-card{padding:8px}
+.role-item{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:9px;cursor:pointer;transition:.13s;border:1px solid transparent}
+.role-item:hover{background:var(--gray-bg)}
+.role-item.active{background:var(--primary-light);border-color:#BFDCCD}
+.role-item .ri-avatar{width:36px;height:36px;border-radius:9px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--primary);flex-shrink:0}
+.role-item .ri-avatar svg{width:17px;height:17px}
+.role-item.active .ri-avatar{background:var(--primary);color:#fff;border-color:var(--primary)}
+.role-item b{display:block;font-size:13.5px;font-weight:500}
+.role-item span{font-size:12px;color:var(--text-3)}
+
+/* ---------- 通知规则 / 功能开关卡片 ---------- */
+.rule-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.rule-card{padding:18px 20px;transition:box-shadow .18s}
+.rule-card:hover{box-shadow:0 4px 14px rgba(22,56,42,.1)}
+.rule-card .rc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.rule-card .rc-title{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:600}
+.rule-card .rc-title .icon{width:17px;height:17px;color:var(--primary)}
+.rule-card .rc-desc{font-size:12.5px;color:var(--text-3);line-height:1.7;margin-bottom:13px}
+.rule-card .rc-meta{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--text-2)}
+.rule-card .rc-meta span{display:flex;align-items:center;gap:6px}
+.rule-card .rc-meta .icon{width:13px;height:13px;color:var(--text-3)}
+.rule-card .rc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}
+.rule-card .rc-foot .switch-label span{font-size:12.5px;color:var(--text-2)}
+.feature-matrix th,.feature-matrix td{text-align:center}
+.feature-matrix th:first-child,.feature-matrix td:first-child{text-align:left}
+.feature-name-cell{display:flex;align-items:center;gap:10px}
+.feature-name-cell .f-icon{width:30px;height:30px;border-radius:8px;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center}
+.feature-name-cell .f-icon svg{width:15px;height:15px}
+.feature-name-cell b{display:block;font-size:13px}
+.feature-name-cell span{font-size:11.5px;color:var(--text-3)}
+
+/* 详情面板 */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px 22px}
+.detail-item .d-label{font-size:12px;color:var(--text-3);margin-bottom:3px}
+.detail-item .d-value{font-size:13.5px;color:var(--text);font-weight:500}
+.detail-section{border:1px solid var(--border);border-radius:10px;padding:15px 17px;margin-top:16px}
+.detail-section .ds-title{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.detail-section .ds-title .icon{width:15px;height:15px;color:var(--primary)}
+
+/* 账号列表左侧筛选 */
+.tenant-picker{padding:8px;margin-bottom:14px}
+.tenant-picker .select{width:100%}
+.simple-list .sl-item{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-radius:8px;transition:.12s;cursor:pointer}
+.simple-list .sl-item:hover{background:var(--gray-bg)}
+.simple-list .sl-item + .sl-item{border-top:1px solid var(--border)}
+
+/* 日志页 */
+.log-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.date-range{display:flex;align-items:center;gap:8px}
+.date-range input{height:34px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:0 9px;outline:none;font-size:13px;color:var(--text-2)}
+.date-range input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,91,.12)}
+.undeletable-note{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-3);margin-top:12px}
+.undeletable-note .icon{width:13px;height:13px;color:var(--warning)}
+.log-content{max-width:380px}
+.log-content b{font-weight:500;color:var(--text)}
+
+/* 响应式 */
+@media(max-width:1100px){
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .rule-grid{grid-template-columns:1fr}
+  .field-row-3{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){
+  .sidebar{width:64px}
+  .sidebar .logo-text,.sidebar .nav-group-title,.sidebar .nav-item span,.sidebar-foot{display:none}
+  .sidebar .nav-item{justify-content:center;padding:10px;margin:2px 8px}
+  .main{margin-left:64px}
+  .login-left{display:none}
+  .split-layout{grid-template-columns:1fr}
+  .field-row,.field-row-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 登录页 ============ -->
+<div id="login-view">
+  <div class="login-left">
+    <div class="ll-inner">
+      <div class="ll-logo">
+        <span class="logo-mark" id="logo-icon-lg"></span>
+        <div><b>野保平台</b><span>多租户管理端</span></div>
+      </div>
+      <h1 class="ll-title">守护野生动物<br>支撑保护区数字化管理</h1>
+      <p class="ll-sub">面向野保平台的多租户统一管控后台，实现租户开通、权限管控、日志审计与消息通知的一站式管理。</p>
+      <div class="ll-points">
+        <div class="ll-point"><span id="ll-p1"></span>租户全生命周期管理 · 开通 / 续期 / 暂停 / 禁用</div>
+        <div class="ll-point"><span id="ll-p2"></span>RBAC 权限模型 · 角色 · 菜单 · 按钮三级管控</div>
+        <div class="ll-point"><span id="ll-p3"></span>全量操作审计 · 平台操作 / 租户生命周期 / 登录日志</div>
+      </div>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-card">
+      <h2>管理员登录</h2>
+      <p class="lc-sub">登录多租户管理后台，开始管理您的租户与平台</p>
+      <form id="login-form" autocomplete="off">
+        <div class="field" id="lg-user-field">
+          <label for="login-user">账号</label>
+          <div class="input-wrap">
+            <span id="lg-user-icon"></span>
+            <input class="input has-icon" id="login-user" type="text" placeholder="请输入管理员账号" value="admin">
+          </div>
+          <div class="err-msg">请输入账号</div>
+        </div>
+        <div class="field" id="lg-pass-field">
+          <label for="login-pass">密码</label>
+          <div class="input-wrap">
+            <span id="lg-pass-icon"></span>
+            <input class="input has-icon" id="login-pass" type="password" placeholder="请输入密码" value="123456">
+            <button type="button" class="input-eye" id="login-eye" onclick="MT.togglePwd()"></button>
+          </div>
+          <div class="err-msg">请输入密码</div>
+        </div>
+        <div class="login-options">
+          <label class="checkbox"><input type="checkbox" id="login-remember" checked> 记住我</label>
+          <a href="javascript:;" onclick="MT.toast('演示环境：请联系平台超级管理员重置密码','info')">忘记密码？</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" id="login-btn">登 录</button>
+      </form>
+      <div class="login-hint">演示账号：admin&nbsp;&nbsp;密码：123456</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 主框架 ============ -->
+<div id="app-view" class="hidden">
+  <aside class="sidebar">
+    <div class="logo-area">
+      <span class="logo-mark" id="logo-icon"></span>
+      <div class="logo-text"><b>野保平台</b><span>多租户管理端</span></div>
+    </div>
+    <nav class="side-nav" id="side-nav"><!-- 由 JS 生成导航 --></nav>
+    <div class="sidebar-foot" id="sidebar-foot"></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="breadcrumb" id="breadcrumb"><span class="crumb-cur">首页</span></div>
+      <div class="topbar-right">
+        <div style="position:relative">
+          <button class="top-icon-btn" id="bell-btn" onclick="MT.toggleDrop('bell-drop')" title="消息通知"></button>
+          <div class="dropdown" id="bell-drop" style="right:0"></div>
+        </div>
+        <div style="position:relative">
+          <div class="user-menu-btn" id="user-btn" onclick="MT.toggleDrop('user-drop')">
+            <span class="avatar" id="avatar-text"></span>
+            <span class="u-name" id="topbar-username"></span>
+            <span id="topbar-chevron"></span>
+          </div>
+          <div class="dropdown" id="user-drop" style="right:0"></div>
+        </div>
+      </div>
+    </header>
+    <main class="content" id="content">
+      <!-- 15 个页面容器：由 JS 渲染 -->
+      <section class="page hidden" data-page="page-accounts" id="pg-accounts"></section>
+      <section class="page hidden" data-page="page-roles" id="pg-roles"></section>
+      <section class="page hidden" data-page="page-permissions" id="pg-permissions"></section>
+      <section class="page hidden" data-page="page-profile" id="pg-profile"></section>
+      <section class="page hidden" data-page="page-tenants" id="pg-tenants"></section>
+      <section class="page hidden" data-page="page-templates" id="pg-templates"></section>
+      <section class="page hidden" data-page="page-tenant-accounts" id="pg-tenant-accounts"></section>
+      <section class="page hidden" data-page="page-feature-switches" id="pg-feature-switches"></section>
+      <section class="page hidden" data-page="page-op-logs" id="pg-op-logs"></section>
+      <section class="page hidden" data-page="page-lifecycle-logs" id="pg-lifecycle-logs"></section>
+      <section class="page hidden" data-page="page-login-logs" id="pg-login-logs"></section>
+      <section class="page hidden" data-page="page-notif-rules" id="pg-notif-rules"></section>
+      <section class="page hidden" data-page="page-notif-records" id="pg-notif-records"></section>
+    </main>
+  </div>
+</div>
+
+<!-- 弹窗与 Toast 容器 -->
+<div id="dialog-root"></div>
+<div id="toast-root"></div>
+<script>
+
+  window.MT = (function () {
+  /* ===================== 图标库（stroke 风格，跟随 currentColor 着色） ===================== */
+  const ICONS = {
+    activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/>',
+    arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    bar: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+    building: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-3h4v3"/>',
+    calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18"/>',
+    camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    check: '<path d="M20 6L9 17l-5-5"/>',
+    chevronDown: '<path d="M6 9l6 6 6-6"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+    close: '<path d="M18 6L6 18M6 6l12 12"/>',
+    database: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+    eye: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/>',
+    fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L21 2M16 7l3 3M14 9l2 2"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    pause: '<rect x="5" y="4" width="4" height="16" rx="1"/><rect x="15" y="4" width="4" height="16" rx="1"/>',
+    paw: '<circle cx="5.5" cy="11" r="2.4"/><circle cx="18.5" cy="11" r="2.4"/><circle cx="8.8" cy="6.2" r="2.4"/><circle cx="15.2" cy="6.2" r="2.4"/><path d="M12 10.5c2.6 0 5 1.8 5 4.3 0 1.6-1.3 3.4-3.2 3.4-.9 0-1.3-.3-1.8-.3s-.9.3-1.8.3c-1.9 0-3.2-1.8-3.2-3.4 0-2.5 2.4-4.3 5-4.3z"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    refresh: '<path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    shield: '<path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/>',
+    toggle: '<rect x="2" y="9" width="20" height="6" rx="3"/><circle cx="16" cy="12" r="2"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 5a3.5 3.5 0 0 1 0 7M19.5 20c0-3-1.9-5-4.5-5.4"/>',
+    zap: '<path d="M13 2L3 14h7l-1 8 11-13h-7l1-7z"/>'
+  };
+  function icon(name, size) {
+    const p = ICONS[name] || ICONS.info;
+    return '<svg class="icon" width="' + (size || 16) + '" height="' + (size || 16) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  }
+
+  /* ===================== 基础工具 ===================== */
+  function $(sel) { return document.querySelector(sel); }
+  function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  function esc(str) { return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function uid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function fmtDate(d) {
+    const x = d instanceof Date ? d : new Date(d);
+    const p = n => (n < 10 ? '0' : '') + n;
+    return x.getFullYear() + '-' + p(x.getMonth() + 1) + '-' + p(x.getDate());
+  }
+  function fmtDateTime(d) {
+    const x = d instanceof Date ? d : new Date(d);
+    const p = n => (n < 10 ? '0' : '') + n;
+    return fmtDate(x) + ' ' + p(x.getHours()) + ':' + p(x.getMinutes());
+  }
+  function todayStr() { return fmtDate(new Date()); }
+  function addYears(dateStr, n) { const d = new Date(dateStr); d.setFullYear(d.getFullYear() + n); return fmtDate(d); }
+  function daysUntil(dateStr) {
+    const a = String(dateStr).split('-').map(Number);
+    const target = new Date(a[0], a[1] - 1, a[2]);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.ceil((target - today) / 86400000);
+  }
+
+  /* ===================== Toast 轻提示 ===================== */
+  function toast(msg, type) {
+    const t = type || 'success';
+    const ic = { success: 'check', error: 'alert', warning: 'alert', info: 'info' }[t] || 'check';
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + t;
+    el.innerHTML = icon(ic, 17) + '<span>' + esc(msg) + '</span>';
+    $('#toast-root').appendChild(el);
+    setTimeout(function () {
+      el.classList.add('out');
+      setTimeout(function () { el.remove(); }, 260);
+    }, 2600);
+  }
+
+  /* ===================== 弹窗系统 ===================== */
+  function openDialog(opts) {
+    closeDialogs();
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML =
+      '<div class="dialog ' + (opts.cls || '') + '">' +
+      '<div class="dialog-head"><h3>' + esc(opts.title || '') + '</h3>' +
+      '<button class="dialog-close" onclick="MT.closeDialogs()">' + icon('close', 16) + '</button></div>' +
+      '<div class="dialog-body">' + (opts.body || '') + '</div>' +
+      (opts.footer ? '<div class="dialog-foot">' + opts.footer + '</div>' : '') +
+      '</div>';
+    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeDialogs(); });
+    $('#dialog-root').appendChild(overlay);
+  }
+  function closeDialogs() { $('#dialog-root').innerHTML = ''; }
+
+  /* ===================== 确认弹窗 ===================== */
+  let confirmAction = null;
+  function confirmBox(opts) {
+    const kind = opts.type === 'danger' ? 'danger' : opts.type === 'info' ? 'info' : 'warning';
+    confirmAction = opts.onConfirm || null;
+    openDialog({
+      title: opts.title || '提示', cls: 'narrow',
+      body: '<div class="danger-box"><div class="db-icon">' + icon(kind === 'danger' || kind === 'warning' ? 'alert' : 'info', 20) + '</div>' +
+        '<div><b>' + esc(opts.message || '') + '</b>' + (opts.desc ? '<p>' + esc(opts.desc) + '</p>' : '') + '</div></div>',
+      footer: '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn ' + (kind === 'danger' ? 'btn-danger' : 'btn-primary') + '" onclick="MT.runConfirm()">' + esc(opts.confirmText || '确定') + '</button>'
+    });
+  }
+  function runConfirm() {
+    const fn = confirmAction;
+    closeDialogs();
+    if (fn) fn();
+    confirmAction = null;
+  }
+
+  /* ===================== 徽章 / 开关 / 分页 ===================== */
+  function badge(text, color, dot) {
+    return '<span class="badge badge-' + color + '">' + (dot === false ? '' : '<span class="dot"></span>') + esc(text) + '</span>';
+  }
+  function switchEl(checked, onChange) {
+    if (!onChange) return '<label class="switch"><input type="checkbox" ' + (checked ? 'checked' : '') + '><span class="slider"></span></label>';
+    const id = 'sw' + Math.random().toString(36).slice(2, 8);
+    _swRegister(id, onChange);
+    return '<label class="switch"><input type="checkbox" id="' + id + '" ' + (checked ? 'checked' : '') + ' onchange="MT._swChange(this,\'' + id + '\')"><span class="slider"></span></label>';
+  }
+  function pagination(total, page, pageSize, fnName) {
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    let html = '<div class="pagination"><span class="pg-info">共 ' + total + ' 条</span>';
+    if (pages > 1) {
+      html += '<button ' + (page <= 1 ? 'disabled' : '') + ' onclick="MT.' + fnName + '(' + (page - 1) + ')">上一页</button>';
+      for (let i = 1; i <= pages; i++) {
+        if (pages > 9 && i > 2 && i < pages - 1 && Math.abs(i - page) > 2) {
+          if (i === 3 || i === pages - 2) html += '<span style="color:var(--text-3);padding:0 2px">…</span>';
+          continue;
+        }
+        html += '<button class="' + (i === page ? 'active' : '') + '" onclick="MT.' + fnName + '(' + i + ')">' + i + '</button>';
+      }
+      html += '<button ' + (page >= pages ? 'disabled' : '') + ' onclick="MT.' + fnName + '(' + (page + 1) + ')">下一页</button>';
+    }
+    return html + '</div>';
+  }
+
+  /* ===================== 模拟数据：平台管理员 & 角色 & 租户 & 权限树 ===================== */
+  const ADMINS = [
+    { account: 'admin', name: '系统管理员', role: '超级管理员', phone: '13800138001', email: 'admin@wubaoplatform.cn', status: '正常', lastLogin: '2026-07-31 09:15', created: '2025-12-01' },
+    { account: 'li.ming', name: '李明', role: '运营管理员', phone: '13900139002', email: 'li.ming@wubaoplatform.cn', status: '正常', lastLogin: '2026-07-30 17:45', created: '2026-01-10' },
+    { account: 'zhang.tao', name: '张涛', role: '审计管理员', phone: '13700137003', email: 'zhang.tao@wubaoplatform.cn', status: '正常', lastLogin: '2026-07-31 08:58', created: '2026-02-14' },
+    { account: 'chen.jing', name: '陈静', role: '运营管理员', phone: '13600136004', email: 'chen.jing@wubaoplatform.cn', status: '正常', lastLogin: '2026-07-30 09:05', created: '2026-03-02' },
+    { account: 'wang.fang', name: '王芳', role: '运维管理员', phone: '13500135005', email: 'wang.fang@wubaoplatform.cn', status: '已禁用', lastLogin: '2026-07-28 15:33', created: '2026-03-20' }
+  ];
+
+  const BUTTONS = ['开通租户', '编辑租户', '续期租户', '暂停恢复', '禁用启用', '删除租户', '模板管理', '租户账号', '功能开关', '新增管理员', '编辑管理员', '重置密码', '删除管理员', '新增角色', '编辑角色', '删除角色', '配置权限', '保存权限', '通知规则', '导出日志'];
+
+  const MENUS = [
+    { id: 'm1', label: '平台权限管理', children: [{ id: 'page-accounts', label: '管理员账号' }, { id: 'page-roles', label: '角色管理' }, { id: 'page-permissions', label: '权限分配' }, { id: 'page-profile', label: '个人中心' }] },
+    { id: 'm2', label: '租户核心管理', children: [{ id: 'page-tenants', label: '租户列表' }] },
+    { id: 'm3', label: '租户权限管控', children: [{ id: 'page-templates', label: '租户角色模板' }, { id: 'page-tenant-accounts', label: '租户账号管控' }, { id: 'page-feature-switches', label: '租户功能开关' }] },
+    { id: 'm4', label: '日志审计', children: [{ id: 'page-op-logs', label: '平台操作日志' }, { id: 'page-lifecycle-logs', label: '租户生命周期日志' }, { id: 'page-login-logs', label: '登录日志' }] },
+    { id: 'm5', label: '消息通知', children: [{ id: 'page-notif-rules', label: '通知规则配置' }, { id: 'page-notif-records', label: '通知记录' }] }
+  ];
+
+  const ROLES = [
+    { id: 'r1', name: '超级管理员', code: 'SUPER_ADMIN', desc: '拥有平台全部菜单与按钮权限，可管理其他管理员', members: 1, created: '2025-12-01', builtin: true, perms: { menus: MENUS.reduce((a, g) => a.concat(g.children.map(c => c.id)), []), buttons: BUTTONS.slice() } },
+    { id: 'r2', name: '运营管理员', code: 'OPS_ADMIN', desc: '负责租户日常运营、续期与状态管控', members: 2, created: '2026-01-10', builtin: false, perms: { menus: ['page-tenants', 'page-templates', 'page-tenant-accounts', 'page-feature-switches', 'page-notif-rules', 'page-notif-records'], buttons: ['开通租户', '编辑租户', '续期租户', '暂停恢复', '禁用启用', '删除租户', '模板管理', '租户账号', '功能开关', '通知规则'] } },
+    { id: 'r3', name: '审计管理员', code: 'AUDIT_ADMIN', desc: '仅可查看平台操作/租户生命周期/登录三类日志', members: 1, created: '2026-02-14', builtin: false, perms: { menus: ['page-op-logs', 'page-lifecycle-logs', 'page-login-logs'], buttons: ['导出日志'] } },
+    { id: 'r4', name: '运维管理员', code: 'OPS_ENGINEER', desc: '负责租户角色模板、账号与功能开关的日常运维', members: 1, created: '2026-03-02', builtin: false, perms: { menus: ['page-templates', 'page-tenant-accounts', 'page-feature-switches', 'page-op-logs'], buttons: ['模板管理', '租户账号', '功能开关', '导出日志'] } }
+  ];
+
+  const TENANTS = [
+    { id: 't01', name: '山东青河湿地保护区', region: '华东', contact: '马建国', phone: '13805318888', email: 'contact@sdqh-park.cn', status: '正常', created: '2025-12-15', expire: '2026-12-31', devQuota: 300, devUsed: 158, accQuota: 40, accUsed: 12, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't02', name: '东北虎豹国家公园', region: '东北', contact: '赵雪松', phone: '13604312222', email: 'contact@dbhb-park.cn', status: '正常', created: '2026-01-08', expire: '2027-03-15', devQuota: 500, devUsed: 268, accQuota: 60, accUsed: 21, features: { ai: true, device: true, storage: true, notify: true, report: true, collab: false } },
+    { id: 't03', name: '三江源国家公园', region: '西北', contact: '才让卓玛', phone: '13909713333', email: 'contact@sjy-park.cn', status: '正常', created: '2026-01-20', expire: '2026-11-30', devQuota: 400, devUsed: 215, accQuota: 50, accUsed: 18, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: true } },
+    { id: 't04', name: '大熊猫国家公园', region: '西南', contact: '林晚晴', phone: '13708384444', email: 'contact@dxm-park.cn', status: '正常', created: '2026-02-05', expire: '2027-06-30', devQuota: 350, devUsed: 174, accQuota: 45, accUsed: 15, features: { ai: true, device: true, storage: true, notify: true, report: true, collab: true } },
+    { id: 't05', name: '西双版纳热带雨林保护区', region: '西南', contact: '岩罕龙', phone: '13906915555', email: 'contact@xsbn-park.cn', status: '即将到期', created: '2025-08-10', expire: '2026-08-10', devQuota: 200, devUsed: 132, accQuota: 30, accUsed: 11, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't06', name: '神农架国家公园', region: '华中', contact: '孙立业', phone: '13807196666', email: 'contact@snj-park.cn', status: '正常', created: '2026-02-18', expire: '2027-01-20', devQuota: 250, devUsed: 121, accQuota: 35, accUsed: 9, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't07', name: '武夷山国家公园', region: '华东', contact: '郑晓芸', phone: '13505997777', email: 'contact@wys-park.cn', status: '已暂停', created: '2026-01-12', expire: '2026-10-12', devQuota: 180, devUsed: 96, accQuota: 25, accUsed: 7, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't08', name: '海南热带雨林保护区', region: '华南', contact: '陈海涛', phone: '13808988888', email: 'contact@hn-park.cn', status: '已禁用', created: '2025-07-30', expire: '2026-07-30', devQuota: 260, devUsed: 187, accQuota: 32, accUsed: 16, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't09', name: '可可西里自然保护区', region: '西北', contact: '丹增多杰', phone: '13909719999', email: 'contact@kkxl-park.cn', status: '正常', created: '2026-03-01', expire: '2027-04-08', devQuota: 220, devUsed: 88, accQuota: 28, accUsed: 5, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } },
+    { id: 't10', name: '珠穆朗玛峰保护区', region: '西南', contact: '次仁旺堆', phone: '13808980000', email: 'contact@zf-park.cn', status: '即将到期', created: '2025-08-05', expire: '2026-08-05', devQuota: 150, devUsed: 72, accQuota: 20, accUsed: 6, features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false } }
+  ];
+
+  /* ===================== 模拟数据：租户侧角色模板 & 租户账号 & 功能开关 ===================== */
+  const TEMPLATES = [
+    { id: 'tp1', name: '租户超级管理员', code: 'TENANT_ADMIN', desc: '拥有租户侧全部功能权限', feats: ['设备管理', '影像查看', 'AI物种识别', '数据分析', '用户管理', '消息通知'], created: '2026-01-05', builtin: true },
+    { id: 'tp2', name: '租户设备管理员', code: 'DEVICE_ADMIN', desc: '负责租户侧设备的注册、维护与运维', feats: ['设备管理'], created: '2026-01-05', builtin: false },
+    { id: 'tp3', name: '租户影像查看员', code: 'VIEWER', desc: '仅可查看影像回放与抓拍记录', feats: ['影像查看'], created: '2026-01-05', builtin: false },
+    { id: 'tp4', name: '租户AI分析员', code: 'AI_ANALYST', desc: '使用 AI 物种识别与数据报表分析', feats: ['AI物种识别', '数据分析'], created: '2026-03-15', builtin: false }
+  ];
+  const ALL_TENANT_FEATS = ['设备管理', '影像查看', 'AI物种识别', '数据分析', '用户管理', '消息通知'];
+
+  const TENANT_ACCOUNTS = {
+    t01: [ { account: 'admin.sdqh', name: '马建国', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-30 08:20' }, { account: 'wang.da', name: '王大锤', role: '租户设备管理员', status: '正常', lastLogin: '2026-07-28 14:05' }, { account: 'li.hu', name: '李虎', role: '租户影像查看员', status: '已禁用', lastLogin: '2026-07-01 09:30' } ],
+    t02: [ { account: 'admin.dbhb', name: '赵雪松', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-29 10:12' }, { account: 'zhang.wei', name: '张伟', role: '租户设备管理员', status: '正常', lastLogin: '2026-07-27 16:40' }, { account: 'liu.yang', name: '刘洋', role: '租户AI分析员', status: '正常', lastLogin: '2026-07-25 11:22' } ],
+    t03: [ { account: 'admin.sjy', name: '才让卓玛', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-28 09:45' }, { account: 'gao.feng', name: '高峰', role: '租户影像查看员', status: '已禁用', lastLogin: '2026-06-18 15:20' } ],
+    t04: [ { account: 'admin.dxm', name: '林晚晴', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-27 13:08' }, { account: 'sun.lei', name: '孙磊', role: '租户设备管理员', status: '正常', lastLogin: '2026-07-26 17:33' } ],
+    t05: [ { account: 'admin.xsbn', name: '岩罕龙', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-21 10:05' }, { account: 'yan.jun', name: '岩军', role: '租户影像查看员', status: '正常', lastLogin: '2026-07-19 08:50' } ],
+    t06: [ { account: 'admin.snj', name: '孙立业', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-26 11:30' }, { account: 'chen.fan', name: '陈帆', role: '租户AI分析员', status: '已禁用', lastLogin: '2026-06-30 14:12' } ],
+    t07: [ { account: 'admin.wys', name: '郑晓芸', role: '租户超级管理员', status: '已禁用', lastLogin: '2026-07-09 09:15' } ],
+    t08: [ { account: 'admin.hn', name: '陈海涛', role: '租户超级管理员', status: '已禁用', lastLogin: '2026-06-28 16:02' } ],
+    t09: [ { account: 'admin.kkxl', name: '丹增多杰', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-28 18:26' }, { account: 'cuo.mu', name: '措姆', role: '租户设备管理员', status: '正常', lastLogin: '2026-07-24 10:48' } ],
+    t10: [ { account: 'admin.zf', name: '次仁旺堆', role: '租户超级管理员', status: '正常', lastLogin: '2026-07-31 08:55' }, { account: 'dan.zeng', name: '旦增', role: '租户影像查看员', status: '正常', lastLogin: '2026-07-30 12:10' } ]
+  };
+  const FEATURE_DEFS = [
+    { key: 'ai', name: 'AI物种识别', desc: '智能识别抓拍影像中的物种并生成报告', ic: 'zap' },
+    { key: 'device', name: '设备运维', desc: '设备注册、在线监控与远程维护', ic: 'camera' },
+    { key: 'storage', name: '影像存储', desc: '影像云端存储与回放管理', ic: 'database' },
+    { key: 'notify', name: '消息通知', desc: '站内信与邮件消息推送', ic: 'message' },
+    { key: 'report', name: '数据报表', desc: '物种活动与设备数据分析报表', ic: 'bar' },
+    { key: 'collab', name: '多用户协作', desc: '租户内多角色协同工作', ic: 'users' }
+  ];
+
+  /* ===================== 模拟数据：日志 ===================== */
+  const OP_LOGS = [
+    { time: '2026-07-31 09:15', op: '系统管理员', account: 'admin', module: '租户核心管理', content: '开通租户「珠穆朗玛峰保护区」，配额：设备50/账号10', ip: '10.12.3.8', type: '新增' },
+    { time: '2026-07-31 09:02', op: '系统管理员', account: 'admin', module: '平台权限管理', content: '新增管理员账号 wang.fang', ip: '10.12.3.8', type: '新增' },
+    { time: '2026-07-30 17:45', op: '李明', account: 'li.ming', module: '租户核心管理', content: '编辑租户「神农架国家公园」配额：设备80→90', ip: '10.12.3.15', type: '编辑' },
+    { time: '2026-07-30 16:30', op: '李明', account: 'li.ming', module: '租户核心管理', content: '暂停租户服务「武夷山国家公园」', ip: '10.12.3.15', type: '暂停恢复' },
+    { time: '2026-07-30 11:12', op: '系统管理员', account: 'admin', module: '消息通知', content: '修改通知规则「租户到期提醒」触发时间', ip: '10.12.3.8', type: '编辑' },
+    { time: '2026-07-29 15:40', op: '张涛', account: 'zhang.tao', module: '日志审计', content: '导出平台操作日志（2026-07 月度）', ip: '10.12.5.21', type: '导出' },
+    { time: '2026-07-29 10:22', op: '李明', account: 'li.ming', module: '租户核心管理', content: '续期租户「祁连山国家公园」服务至 2027-06-30', ip: '10.12.3.15', type: '续期' },
+    { time: '2026-07-28 17:05', op: '系统管理员', account: 'admin', module: '租户权限管控', content: '更新租户「海南热带雨林保护区」功能开关', ip: '10.12.3.8', type: '编辑' },
+    { time: '2026-07-28 14:48', op: '陈静', account: 'chen.jing', module: '租户权限管控', content: '紧急重置租户管理员密码「三江源国家公园」', ip: '10.12.6.9', type: '重置密码' },
+    { time: '2026-07-27 09:33', op: '系统管理员', account: 'admin', module: '平台权限管理', content: '配置角色「运营管理员」菜单与按钮权限', ip: '10.12.3.8', type: '编辑' },
+    { time: '2026-07-26 16:12', op: '系统管理员', account: 'admin', module: '租户核心管理', content: '禁用租户「海南热带雨林保护区」', ip: '10.12.3.8', type: '启用禁用' },
+    { time: '2026-07-26 10:05', op: '李明', account: 'li.ming', module: '平台权限管理', content: '禁用管理员账号 chen.jing', ip: '10.12.3.15', type: '启用禁用' },
+    { time: '2026-07-25 15:57', op: '系统管理员', account: 'admin', module: '平台权限管理', content: '删除角色「客服专员」', ip: '10.12.3.8', type: '删除' },
+    { time: '2026-07-25 09:20', op: '张涛', account: 'zhang.tao', module: '日志审计', content: '检索平台操作日志（关键词：租户）', ip: '10.12.5.21', type: '检索' }
+  ];
+  const LIFECYCLE_LOGS = [
+    { time: '2026-07-31 09:15', op: '系统管理员', account: 'admin', action: '开通', tenant: '珠穆朗玛峰保护区', detail: '新增租户，配额：设备50/账号10，初始化管理员 admin.zf', ip: '10.12.3.8' },
+    { time: '2026-07-30 16:30', op: '李明', account: 'li.ming', action: '暂停', tenant: '武夷山国家公园', detail: '暂停租户服务，租户侧账号暂时无法登录', ip: '10.12.3.15' },
+    { time: '2026-07-29 10:22', op: '李明', account: 'li.ming', action: '续期', tenant: '祁连山国家公园', detail: '服务有效期延长至 2027-06-30', ip: '10.12.3.15' },
+    { time: '2026-07-28 14:48', op: '陈静', account: 'chen.jing', action: '编辑', tenant: '三江源国家公园', detail: '账号配额 30 → 40', ip: '10.12.6.9' },
+    { time: '2026-07-26 16:12', op: '系统管理员', account: 'admin', action: '禁用', tenant: '海南热带雨林保护区', detail: '禁用租户账号，停止全部服务', ip: '10.12.3.8' },
+    { time: '2026-07-21 11:40', op: '李明', account: 'li.ming', action: '恢复', tenant: '西双版纳热带雨林保护区', detail: '恢复暂停的租户服务', ip: '10.12.3.15' },
+    { time: '2026-07-15 09:08', op: '系统管理员', account: 'admin', action: '编辑', tenant: '神农架国家公园', detail: '修改联系人信息与联系电话', ip: '10.12.3.8' },
+    { time: '2026-07-10 14:26', op: '系统管理员', account: 'admin', action: '开通', tenant: '武夷山国家公园', detail: '新增租户，配额：设备60/账号10', ip: '10.12.3.8' },
+    { time: '2026-07-02 10:15', op: '李明', account: 'li.ming', action: '暂停', tenant: '海南热带雨林保护区', detail: '暂停租户服务（欠费）', ip: '10.12.3.15' },
+    { time: '2026-06-28 16:44', op: '系统管理员', account: 'admin', action: '续期', tenant: '东北虎豹国家公园', detail: '服务有效期延长至 2026-12-31', ip: '10.12.3.8' },
+    { time: '2026-06-20 09:30', op: '系统管理员', account: 'admin', action: '编辑', tenant: '可可西里自然保护区', detail: '设备配额 150 → 200', ip: '10.12.3.8' },
+    { time: '2026-06-30 00:00', op: '系统', account: 'system', action: '自动禁用', tenant: '海南热带雨林保护区', detail: '服务到期，系统自动禁用该租户', ip: 'system' }
+  ];
+  const LOGIN_LOGS = [
+    { time: '2026-07-31 09:12', account: 'admin', name: '系统管理员', ip: '10.12.3.8', status: '成功', reason: '' },
+    { time: '2026-07-31 08:58', account: 'zhang.tao', name: '张涛', ip: '10.12.5.21', status: '失败', reason: '密码错误' },
+    { time: '2026-07-30 17:45', account: 'li.ming', name: '李明', ip: '10.12.3.15', status: '成功', reason: '' },
+    { time: '2026-07-30 09:05', account: 'chen.jing', name: '陈静', ip: '10.12.6.9', status: '失败', reason: '账号已禁用' },
+    { time: '2026-07-29 16:20', account: 'admin', name: '系统管理员', ip: '10.12.3.8', status: '成功', reason: '' },
+    { time: '2026-07-29 11:12', account: 'li.ming', name: '李明', ip: '10.12.3.15', status: '成功', reason: '' },
+    { time: '2026-07-29 09:40', account: 'wang.fang', name: '王芳', ip: '10.12.3.18', status: '成功', reason: '' },
+    { time: '2026-07-28 15:33', account: 'zhang.tao', name: '张涛', ip: '10.12.5.21', status: '成功', reason: '' },
+    { time: '2026-07-28 09:22', account: 'admin', name: '系统管理员', ip: '10.12.3.8', status: '成功', reason: '' },
+    { time: '2026-07-27 18:02', account: 'li.ming', name: '李明', ip: '10.12.3.15', status: '成功', reason: '' }
+  ];
+
+  /* ===================== 模拟数据：消息通知 ===================== */
+  const NOTIF_RULES = [
+    { id: 'nr1', name: '租户到期提醒', desc: '租户服务到期前进行提醒，避免服务中断', trigger: '到期前 30 天', channels: ['站内信', '邮件'], target: '租户联系人', status: '启用' },
+    { id: 'nr2', name: '服务暂停通知', desc: '租户服务被暂停或恢复时及时通知', trigger: '暂停 / 恢复时', channels: ['站内信', '邮件'], target: '租户联系人', status: '启用' },
+    { id: 'nr3', name: '配额超限预警', desc: '设备或账号配额使用率过高时预警', trigger: '配额使用率达 80%', channels: ['站内信'], target: '租户联系人', status: '启用' },
+    { id: 'nr4', name: '登录安全提醒', desc: '租户管理员在非常用设备登录时提醒', trigger: '异地 / 新设备登录', channels: ['邮件'], target: '租户管理员', status: '禁用' }
+  ];
+  const NOTIF_RECORDS = [
+    { time: '2026-07-31 09:16', type: '租户到期提醒', tenant: '珠穆朗玛峰保护区', contact: '次仁旺堆', channel: '站内信', content: '贵租户服务将于 2026-08-05 到期，请及时续期', status: '已发送' },
+    { time: '2026-07-31 09:16', type: '租户到期提醒', tenant: '珠穆朗玛峰保护区', contact: '次仁旺堆', channel: '邮件', content: '贵租户服务将于 2026-08-05 到期，请及时续期', status: '已发送' },
+    { time: '2026-07-30 16:31', type: '服务暂停通知', tenant: '武夷山国家公园', contact: '郑晓芸', channel: '站内信', content: '您的租户服务已被暂停，如有疑问请联系平台运营', status: '已读' },
+    { time: '2026-07-30 16:31', type: '服务暂停通知', tenant: '武夷山国家公园', contact: '郑晓芸', channel: '邮件', content: '您的租户服务已被暂停，如有疑问请联系平台运营', status: '已发送' },
+    { time: '2026-07-29 10:23', type: '配额超限预警', tenant: '祁连山国家公园', contact: '马建国', channel: '站内信', content: '设备配额使用率已达 86%，请及时扩容', status: '已读' },
+    { time: '2026-07-21 11:41', type: '服务暂停通知', tenant: '西双版纳热带雨林保护区', contact: '岩罕龙', channel: '站内信', content: '您的租户服务已恢复正常', status: '已读' },
+    { time: '2026-07-15 09:09', type: '租户到期提醒', tenant: '海南热带雨林保护区', contact: '陈海涛', channel: '邮件', content: '贵租户服务将于 2026-06-30 到期，请及时续期', status: '失败' },
+    { time: '2026-07-12 09:02', type: '配额超限预警', tenant: '东北虎豹国家公园', contact: '赵雪松', channel: '站内信', content: '账号配额使用率已达 78%，请及时扩容', status: '未读' },
+    { time: '2026-07-05 15:18', type: '租户到期提醒', tenant: '西双版纳热带雨林保护区', contact: '岩罕龙', channel: '邮件', content: '贵租户服务将于 2026-08-10 到期，请及时续期', status: '已发送' }
+  ];
+  const BELL_NOTIFS = [
+    { time: '10 分钟前', title: '租户到期提醒', body: '珠穆朗玛峰保护区服务将于 5 天后到期', read: false },
+    { time: '1 小时前', title: '配额超限预警', body: '祁连山国家公园设备配额使用率达 86%', read: false }
+  ];
+
+  /* ===================== 全局状态 ===================== */
+  let currentUser = null;
+  let currentPage = 'page-tenants';
+  let tenantPage = 1;
+  let adminPage = 1;
+  let opLogPage = 1;
+  let lifeLogPage = 1;
+  let loginLogPage = 1;
+  let notifRecPage = 1;
+  let tenantSearch = '';
+  let tenantStatus = '全部';
+  const PAGE_SIZE = 8;
+
+  /* ===================== 日志写入辅助 ===================== */
+  function addOpLog(module, content, type) {
+    OP_LOGS.unshift({ time: fmtDateTime(new Date()), op: currentUser ? currentUser.name : '系统管理员', account: currentUser ? currentUser.account : 'admin', module: module, content: content, ip: '10.12.3.8', type: type || '编辑' });
+  }
+  function addLifecycleLog(tenantName, action, detail) {
+    LIFECYCLE_LOGS.unshift({ time: fmtDateTime(new Date()), op: currentUser ? currentUser.name : '系统管理员', account: currentUser ? currentUser.account : 'admin', action: action, tenant: tenantName, detail: detail, ip: '10.12.3.8' });
+  }
+  function addLoginLog(account, name, ip, status, reason) {
+    LOGIN_LOGS.unshift({ time: fmtDateTime(new Date()), account: account, name: name, ip: ip, status: status, reason: reason || '' });
+  }
+
+  /* ===================== 路由 ===================== */
+  const PAGE_META = {
+    'page-accounts': { group: '平台权限管理', name: '管理员账号' },
+    'page-roles': { group: '平台权限管理', name: '角色管理' },
+    'page-permissions': { group: '平台权限管理', name: '权限分配' },
+    'page-profile': { group: '平台权限管理', name: '个人中心' },
+    'page-tenants': { group: '租户核心管理', name: '租户列表' },
+    'page-templates': { group: '租户权限管控', name: '租户角色模板' },
+    'page-tenant-accounts': { group: '租户权限管控', name: '租户账号管控' },
+    'page-feature-switches': { group: '租户权限管控', name: '租户功能开关' },
+    'page-op-logs': { group: '日志审计', name: '平台操作日志' },
+    'page-lifecycle-logs': { group: '日志审计', name: '租户生命周期日志' },
+    'page-login-logs': { group: '日志审计', name: '登录日志' },
+    'page-notif-rules': { group: '消息通知', name: '通知规则配置' },
+    'page-notif-records': { group: '消息通知', name: '通知记录' }
+  };
+
+  function showPage(id) {
+    currentPage = id;
+    $$('.page', $('#content')).forEach(s => s.classList.toggle('hidden', s.dataset.page !== id));
+    $$('.nav-item', $('#side-nav')).forEach(n => n.classList.toggle('active', n.dataset.page === id));
+    const meta = PAGE_META[id];
+    $('#breadcrumb').innerHTML = '<span class="crumb-cur">首页</span><span class="crumb-sep">/</span><span>' + esc(meta.group) + '</span><span class="crumb-sep">/</span><span class="crumb-cur">' + esc(meta.name) + '</span>';
+    const renderers = {
+      'page-accounts': renderAccounts,
+      'page-roles': renderRoles,
+      'page-permissions': renderPermissions,
+      'page-profile': renderProfile,
+      'page-tenants': renderTenants,
+      'page-templates': renderTemplates,
+      'page-tenant-accounts': renderTenantAccounts,
+      'page-feature-switches': renderFeatureSwitches,
+      'page-op-logs': renderOpLogs,
+      'page-lifecycle-logs': renderLifecycleLogs,
+      'page-login-logs': renderLoginLogs,
+      'page-notif-rules': renderNotifRules,
+      'page-notif-records': renderNotifRecords
+    };
+    if (renderers[id]) renderers[id]();
+    else $('#' + id).innerHTML = '<div class="build-placeholder">' + icon('settings', 52) + '<b>页面建设中</b><span>该页面将在后续版本中提供</span></div>';
+  }
+
+  /* ===================== 登录 / 退出 ===================== */
+  function togglePwd() {
+    const inp = $('#login-pass');
+    const eye = $('#login-eye');
+    if (inp.type === 'password') { inp.type = 'text'; eye.innerHTML = icon('eyeOff', 16); }
+    else { inp.type = 'password'; eye.innerHTML = icon('eye', 16); }
+  }
+
+  function doLogin(e) {
+    e.preventDefault();
+    const userEl = $('#login-user'), passEl = $('#login-pass');
+    const uField = $('#lg-user-field'), pField = $('#lg-pass-field');
+    let ok = true;
+    if (!userEl.value.trim()) { uField.classList.add('has-err'); userEl.classList.add('err'); ok = false; }
+    if (!passEl.value) { pField.classList.add('has-err'); passEl.classList.add('err'); ok = false; }
+    if (!ok) return;
+    const btn = $('#login-btn');
+    btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = icon('clock', 16) + '登录中…';
+    setTimeout(() => {
+      const acc = ADMINS.find(a => a.account === userEl.value.trim() && a.status === '正常');
+      if (acc && passEl.value === '123456') {
+        currentUser = acc;
+        addLoginLog(acc.account, acc.name, '10.12.3.8', '成功', '');
+        acc.lastLogin = fmtDateTime(new Date());
+        $('#login-view').classList.add('hidden');
+        $('#app-view').classList.remove('hidden');
+        $('#topbar-username').textContent = acc.name;
+        $('#avatar-text').textContent = acc.name.slice(0, 1);
+        $('#sidebar-foot').innerHTML = '当前用户：' + esc(acc.name) + '<br>角色：' + esc(acc.role);
+        renderNav();
+        renderTopbar();
+        showPage('page-tenants');
+        toast('登录成功，欢迎回来，' + acc.name + '！');
+      } else {
+        addLoginLog(userEl.value.trim() || '-', '-', '10.12.3.8', '失败', acc ? '密码错误' : '账号不存在或已禁用');
+        btn.disabled = false; btn.classList.remove('btn-loading'); btn.innerHTML = '登 录';
+        const card = $('.login-card');
+        card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+        toast('账号或密码错误，请重试', 'error');
+      }
+    }, 900);
+  }
+
+  function doLogout() {
+    confirmBox({
+      title: '退出登录', type: 'info',
+      message: '确定要退出当前账号吗？',
+      desc: '退出后需要重新登录才能进入管理后台',
+      confirmText: '退出登录',
+      onConfirm: function () {
+        addLoginLog(currentUser.account, currentUser.name, '10.12.3.8', '退出', '');
+        currentUser = null;
+        $('#app-view').classList.add('hidden');
+        $('#login-view').classList.remove('hidden');
+        $('#login-form').reset();
+        $('#login-user').value = 'admin'; $('#login-pass').value = '123456';
+        toast('已安全退出登录', 'info');
+      }
+    });
+  }
+
+  function toggleDrop(id) {
+    $$('.dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+    $('#' + id).classList.toggle('open');
+  }
+
+  function renderNav() {
+    const NAV = [
+      { group: '平台权限管理', ic: 'shield', items: [['page-accounts', 'user', '管理员账号'], ['page-roles', 'users', '角色管理'], ['page-permissions', 'list', '权限分配'], ['page-profile', 'settings', '个人中心']] },
+      { group: '租户核心管理', ic: 'building', items: [['page-tenants', 'building', '租户列表']] },
+      { group: '租户权限管控', ic: 'key', items: [['page-templates', 'list', '租户角色模板'], ['page-tenant-accounts', 'users', '租户账号管控'], ['page-feature-switches', 'toggle', '租户功能开关']] },
+      { group: '日志审计', ic: 'fileText', items: [['page-op-logs', 'fileText', '平台操作日志'], ['page-lifecycle-logs', 'activity', '租户生命周期日志'], ['page-login-logs', 'key', '登录日志']] },
+      { group: '消息通知', ic: 'bell', items: [['page-notif-rules', 'settings', '通知规则配置'], ['page-notif-records', 'mail', '通知记录']] }
+    ];
+    let html = '';
+    NAV.forEach(g => {
+      html += '<div class="nav-group-title">' + esc(g.group) + '</div>';
+      g.items.forEach(it => {
+        html += '<a class="nav-item" data-page="' + it[0] + '" onclick="MT.showPage(\'' + it[0] + '\')">' + icon(it[1], 16) + '<span>' + esc(it[2]) + '</span></a>';
+      });
+    });
+    $('#side-nav').innerHTML = html;
+  }
+
+  function renderTopbar() {
+    $('#bell-btn').innerHTML = icon('bell', 19) + '<span class="notify-dot"></span>';
+    let bellHtml = '<div class="dd-head"><b>消息通知</b><span>站内信与预警提醒</span></div>';
+    BELL_NOTIFS.forEach(n => {
+      bellHtml += '<div class="dd-notify"><span class="n-dot ' + (n.read ? 'read' : '') + '"></span><div><b>' + esc(n.title) + '</b><span>' + esc(n.body) + ' · ' + esc(n.time) + '</span></div></div>';
+    });
+    bellHtml += '<div class="dd-sep"></div><a class="dd-item" onclick="MT.closeDropAll();MT.showPage(\'page-notif-records\')">' + icon('arrowRight', 15) + '查看全部通知记录</a>';
+    $('#bell-drop').innerHTML = bellHtml;
+    $('#topbar-chevron').innerHTML = icon('chevronDown', 14);
+    $('#user-drop').innerHTML =
+      '<div class="dd-head"><b>' + esc(currentUser.name) + '</b><span>角色：' + esc(currentUser.role) + '</span></div>' +
+      '<a class="dd-item" onclick="MT.closeDropAll();MT.showPage(\'page-profile\')">' + icon('user', 15) + '个人中心</a>' +
+      '<a class="dd-item" onclick="MT.closeDropAll();MT.openChangePwd()">' + icon('key', 15) + '修改密码</a>' +
+      '<div class="dd-sep"></div>' +
+      '<a class="dd-item danger" onclick="MT.closeDropAll();MT.doLogout()">' + icon('logout', 15) + '退出登录</a>';
+  }
+  function closeDropAll() { $$('.dropdown').forEach(d => d.classList.remove('open')); }
+  function _swChange(input, storedId) {
+    if (window.MT._swHandlers && window.MT._swHandlers[storedId]) window.MT._swHandlers[storedId](input.checked, input);
+  }
+  function _swRegister(id, fn) {
+    if (!window.MT._swHandlers) window.MT._swHandlers = {};
+    window.MT._swHandlers[id] = fn;
+  }
+
+  /* ===================== 通用：状态徽章 ===================== */
+  function statusBadge(status) {
+    const map = { '正常': 'success', '已暂停': 'warning', '已禁用': 'gray', '即将到期': 'danger', '成功': 'success', '失败': 'danger', '退出': 'info', '已发送': 'success', '已读': 'gray', '未读': 'info' };
+    return badge(status, map[status] || 'gray');
+  }
+  function quotaCell(used, quota) {
+    const pct = quota > 0 ? Math.round(used / quota * 100) : 0;
+    const cls = pct >= 90 ? 'danger' : pct >= 75 ? 'warn' : '';
+    return '<div class="quota"><div class="quota-top"><span>' + used + ' / ' + quota + '</span><span>' + pct + '%</span></div><div class="quota-bar ' + cls + '"><i style="width:' + Math.min(pct, 100) + '%"></i></div></div>';
+  }
+  function pageHead(title, desc) {
+    return '<div class="page-head"><div class="page-title"><h1>' + title + '</h1><p>' + desc + '</p></div></div>';
+  }
+
+  /* ============================================================
+     页面：管理员账号（功能2）
+     ============================================================ */
+  function renderAccounts(page) {
+    if (page) adminPage = page;
+    let kw = (window.MT._accKw || '').toLowerCase();
+    let list = ADMINS.filter(a => !kw || a.account.toLowerCase().includes(kw) || a.name.includes(kw));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (adminPage > pages) adminPage = pages;
+    const rows = list.slice((adminPage - 1) * PAGE_SIZE, adminPage * PAGE_SIZE);
+    let html = pageHead('管理员账号', '管理平台管理员账号，支持新增、编辑、启用/禁用、重置密码与删除') +
+      '<div class="help-note">' + icon('shield', 15) + '<span><b>权限说明：</b>本功能仅超级管理员可操作，用于维护平台侧运营/审计/运维人员账号。</span></div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0">' +
+      '<div class="search-box">' + icon('search', 15) + '<input id="acc-search" placeholder="搜索账号 / 姓名" value="' + esc(kw) + '" oninput="MT._accSearch(this.value)"></div>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-primary" onclick="MT.openAdminModal(null)">' + icon('plus', 15) + '新增管理员</button>' +
+      '</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>账号</th><th>姓名</th><th>角色</th><th>手机号</th><th>状态</th><th>最近登录</th><th style="width:210px">操作</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="7"><div class="table-empty">' + icon('search', 40) + '<p>未找到匹配的管理员账号</p></div></td></tr>';
+    rows.forEach(a => {
+      const disabled = a.account === 'admin';
+      html += '<tr>' +
+        '<td><div class="cell-main">' + esc(a.account) + (disabled ? ' ' + badge('内置', 'info', false) : '') + '</div><div class="cell-sub">' + esc(a.email) + '</div></td>' +
+        '<td>' + esc(a.name) + '</td>' +
+        '<td><span class="badge-role">' + esc(a.role) + '</span></td>' +
+        '<td class="num">' + esc(a.phone) + '</td>' +
+        '<td>' + statusBadge(a.status) + '</td>' +
+        '<td class="num">' + esc(a.lastLogin) + '</td>' +
+        '<td><div class="actions">' +
+        '<button class="link-btn" onclick="MT.openAdminModal(\'' + a.account + '\')">编辑</button>' +
+        '<button class="link-btn" onclick="MT.resetPwdModal(\'' + a.account + '\')">重置密码</button>' +
+        (a.status === '正常' ? '<button class="link-btn gray" onclick="MT.toggleAdmin(\'' + a.account + '\')">禁用</button>' : '<button class="link-btn" onclick="MT.toggleAdmin(\'' + a.account + '\')">启用</button>') +
+        (disabled ? '' : '<button class="link-btn danger" onclick="MT.delAdmin(\'' + a.account + '\')">删除</button>') +
+        '</div></td></tr>';
+    });
+    html += '</tbody></table></div>' + pagination(list.length, adminPage, PAGE_SIZE, 'renderAccounts') + '</div>';
+    $('#pg-accounts').innerHTML = html;
+  }
+  function _accSearch(v) { window.MT._accKw = v; adminPage = 1; renderAccounts(); }
+
+  function openAdminModal(account) {
+    const isEdit = !!account;
+    const a = isEdit ? ADMINS.find(x => x.account === account) : null;
+    const roleOpts = ROLES.map(r => '<option value="' + esc(r.name) + '" ' + (a && a.role === r.name ? 'selected' : '') + '>' + esc(r.name) + '</option>').join('');
+    openDialog({
+      title: isEdit ? '编辑管理员' : '新增管理员',
+      body:
+        '<div class="field"><label>登录账号<span class="req">*</span></label><input class="input" id="adm-account" value="' + esc(a ? a.account : '') + '" ' + (isEdit ? 'disabled' : '') + ' placeholder="例如：li.ming"><div class="err-msg">请输入登录账号</div></div>' +
+        '<div class="field-row"><div class="field"><label>姓名<span class="req">*</span></label><input class="input" id="adm-name" value="' + esc(a ? a.name : '') + '" placeholder="请输入姓名"><div class="err-msg">请输入姓名</div></div>' +
+        '<div class="field"><label>角色<span class="req">*</span></label><select class="select" id="adm-role">' + roleOpts + '</select></div></div>' +
+        '<div class="field-row"><div class="field"><label>手机号</label><input class="input" id="adm-phone" value="' + esc(a ? a.phone : '') + '" placeholder="请输入手机号"></div>' +
+        '<div class="field"><label>邮箱</label><input class="input" id="adm-email" value="' + esc(a ? a.email : '') + '" placeholder="请输入邮箱"></div></div>' +
+        (isEdit ? '' : '<div class="field"><label>初始密码<span class="req">*</span></label><input class="input" id="adm-pwd" value="123456" placeholder="默认 123456，首次登录请修改"><div class="hint">默认初始密码为 123456，账号首次登录时需强制修改</div></div>') +
+        (isEdit ? '<div class="field"><label>账号状态</label><label class="switch-label"><span>' + (a.status === '正常' ? '正常' : '已禁用') + '</span>' + switchEl(a.status === '正常', null) + '</label></div>' : ''),
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveAdmin(\'' + (isEdit ? a.account : 'new') + '\')">' + (isEdit ? '保存修改' : '确认新增') + '</button>'
+    });
+  }
+  function saveAdmin(account) {
+    const accEl = $('#adm-account'), nameEl = $('#adm-name');
+    let ok = true;
+    if (!nameEl.value.trim()) { nameEl.classList.add('err'); ok = false; }
+    if (account === 'new') {
+      if (!accEl.value.trim()) { accEl.classList.add('err'); ok = false; }
+      else if (ADMINS.some(x => x.account === accEl.value.trim())) { accEl.classList.add('err'); accEl.nextElementSibling.textContent = '该账号已存在'; ok = false; }
+      else accEl.nextElementSibling.textContent = '请输入登录账号';
+    }
+    if (!ok) return;
+    if (account === 'new') {
+      ADMINS.push({ account: accEl.value.trim(), name: nameEl.value.trim(), role: $('#adm-role').value, phone: $('#adm-phone').value || '-', email: $('#adm-email').value || '-', status: '正常', lastLogin: '—', created: fmtDate(new Date()) });
+      addOpLog('平台权限管理', '新增管理员账号 ' + accEl.value.trim(), '新增');
+      toast('管理员账号创建成功');
+    } else {
+      const a = ADMINS.find(x => x.account === account);
+      a.name = nameEl.value.trim(); a.role = $('#adm-role').value; a.phone = $('#adm-phone').value || '-'; a.email = $('#adm-email').value || '-';
+      addOpLog('平台权限管理', '编辑管理员账号 ' + account, '编辑');
+      toast('管理员信息已更新');
+    }
+    closeDialogs(); renderAccounts();
+  }
+  function resetPwdModal(account) {
+    const a = ADMINS.find(x => x.account === account);
+    confirmBox({
+      title: '重置密码', type: 'warning',
+      message: '将为账号「' + a.name + '」重置密码',
+      desc: '重置后原密码立即失效，系统将生成一个新的随机初始密码',
+      confirmText: '确认重置',
+      onConfirm: function () {
+        const newPwd = 'Pw' + Math.random().toString(36).slice(2, 8);
+        addOpLog('平台权限管理', '重置管理员密码 ' + account, '重置密码');
+        openDialog({
+          title: '重置密码完成', cls: 'narrow',
+          body: '<div class="danger-box"><div class="db-icon">' + icon('check', 20) + '</div><div><b>新密码已生成</b><p>请将该初始密码安全地告知管理员「' + esc(a.name) + '」，首次登录后应尽快修改。</p><div class="login-hint">新密码：' + newPwd + '</div></div></div>',
+          footer: '<button class="btn btn-primary" onclick="MT.closeDialogs()">我已记录，关闭</button>'
+        });
+      }
+    });
+  }
+  function toggleAdmin(account) {
+    const a = ADMINS.find(x => x.account === account);
+    const toEnable = a.status !== '正常';
+    confirmBox({
+      title: toEnable ? '启用账号' : '禁用账号', type: toEnable ? 'info' : 'warning',
+      message: (toEnable ? '启用' : '禁用') + '管理员账号「' + a.name + '」？',
+      desc: toEnable ? '启用后该账号可正常登录管理后台' : '禁用后该账号将无法登录管理后台',
+      confirmText: toEnable ? '确认启用' : '确认禁用',
+      onConfirm: function () {
+        a.status = toEnable ? '正常' : '已禁用';
+        addOpLog('平台权限管理', (toEnable ? '启用' : '禁用') + '管理员账号 ' + account, '启用禁用');
+        toast('账号「' + a.name + '」已' + (toEnable ? '启用' : '禁用'));
+        renderAccounts();
+      }
+    });
+  }
+  function delAdmin(account) {
+    const a = ADMINS.find(x => x.account === account);
+    if (a.account === 'admin') { toast('内置超级管理员账号不可删除', 'error'); return; }
+    confirmBox({
+      title: '删除管理员', type: 'danger',
+      message: '确定删除管理员「' + a.name + '」？',
+      desc: '删除后该账号将立即失去访问权限，且无法恢复',
+      confirmText: '确认删除',
+      onConfirm: function () {
+        ADMINS.splice(ADMINS.indexOf(a), 1);
+        addOpLog('平台权限管理', '删除管理员账号 ' + account, '删除');
+        toast('管理员「' + a.name + '」已删除');
+        renderAccounts();
+      }
+    });
+  }
+
+  /* ============================================================
+     页面：角色管理（功能3）+ 权限树组件
+     ============================================================ */
+  let permSel = new Set();
+  let permSelType = 'menus';
+  let permOnChange = null;
+
+  function permTreeHtml(groups, prefix, withGroupBox) {
+    let html = '';
+    groups.forEach(g => {
+      html += '<div class="pt-group">' +
+        '<label class="pt-group-head"><input type="checkbox" data-prefix="' + prefix + '" data-gid="' + g.id + '" onchange="MT._permGroupChange(this)"><span>' + esc(g.label) + '</span></label>' +
+        '<div class="pt-children">';
+      g.children.forEach(c => {
+        html += '<label class="pt-child"><input type="checkbox" value="' + c.id + '" data-prefix="' + prefix + '"' + (permSel.has(c.id) ? ' checked' : '') + ' onchange="MT._permChildChange(this)">' + esc(c.label) + '</label>';
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+  function _permChildChange(input) {
+    if (input.checked) permSel.add(input.value); else permSel.delete(input.value);
+    syncPermTree(input.dataset.prefix);
+    if (permOnChange) permOnChange();
+  }
+  function _permGroupChange(input) {
+    const prefix = input.dataset.prefix;
+    const gid = input.dataset.gid;
+    const groups = (permSelType === 'menus' ? MENUS : [{ id: 'b', label: '按钮权限', children: BUTTONS.map(b => ({ id: b, label: b })) }]);
+    const g = groups.find(x => x.id === gid);
+    g.children.forEach(c => { if (input.checked) permSel.add(c.id); else permSel.delete(c.id); });
+    syncPermTree(prefix);
+    if (permOnChange) permOnChange();
+  }
+  function syncPermTree(prefix) {
+    const groups = (permSelType === 'menus' ? MENUS : [{ id: 'b', label: '按钮权限', children: BUTTONS.map(b => ({ id: b, label: b })) }]);
+    groups.forEach(g => {
+      const gBox = document.querySelector('input[data-prefix="' + prefix + '"][data-gid="' + g.id + '"]');
+      if (!gBox) return;
+      const childBoxes = document.querySelectorAll('input[data-prefix="' + prefix + '"][value="' + g.id + '"]');
+      const selN = childBoxes.length ? Array.prototype.filter.call(childBoxes, b => permSel.has(b.value)).length : 0;
+      if (selN === 0) { gBox.checked = false; gBox.indeterminate = false; }
+      else if (selN === childBoxes.length) { gBox.checked = true; gBox.indeterminate = false; }
+      else { gBox.checked = true; gBox.indeterminate = true; }
+    });
+  }
+
+  function renderRoles() {
+    let html = pageHead('角色管理', '基于 RBAC 权限模型管理平台角色，配置角色的菜单权限与按钮权限') +
+      '<div class="help-note">' + icon('shield', 15) + '<span><b>RBAC 说明：</b>角色是平台权限管理的核心，通过「角色 → 权限」的绑定关系，控制每位管理员可访问的页面与可执行的操作。</span></div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0"><div class="spacer"></div>' +
+      '<button class="btn btn-primary" onclick="MT.openRoleModal(null)">' + icon('plus', 15) + '新增角色</button></div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>角色名称</th><th>角色编码</th><th>描述</th><th>成员数</th><th>创建时间</th><th style="width:180px">操作</th>' +
+      '</tr></thead><tbody>';
+    ROLES.forEach(r => {
+      html += '<tr>' +
+        '<td><div class="cell-main">' + esc(r.name) + (r.builtin ? ' ' + badge('内置', 'info', false) : '') + '</div></td>' +
+        '<td><span style="font-family:var(--mono);font-size:12.5px;color:var(--text-2)">' + esc(r.code) + '</span></td>' +
+        '<td style="color:var(--text-2)">' + esc(r.desc) + '</td>' +
+        '<td class="num">' + r.members + ' 人</td>' +
+        '<td class="num">' + esc(r.created) + '</td>' +
+        '<td><div class="actions">' +
+        '<button class="link-btn" onclick="MT.openRolePermModal(\'' + r.id + '\')">配置权限</button>' +
+        '<button class="link-btn" onclick="MT.openRoleModal(\'' + r.id + '\')">编辑</button>' +
+        (r.builtin ? '' : '<button class="link-btn danger" onclick="MT.delRole(\'' + r.id + '\')">删除</button>') +
+        '</div></td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    $('#pg-roles').innerHTML = html;
+  }
+
+  function openRoleModal(roleId) {
+    const isEdit = !!roleId;
+    const r = isEdit ? ROLES.find(x => x.id === roleId) : null;
+    openDialog({
+      title: isEdit ? '编辑角色' : '新增角色',
+      body:
+        '<div class="field-row"><div class="field"><label>角色名称<span class="req">*</span></label><input class="input" id="role-name" value="' + esc(r ? r.name : '') + '" placeholder="例如：运营管理员"><div class="err-msg">请输入角色名称</div></div>' +
+        '<div class="field"><label>角色编码<span class="req">*</span></label><input class="input" id="role-code" value="' + esc(r ? r.code : '') + '" placeholder="例如：OPS_ADMIN"><div class="err-msg">请输入角色编码</div></div></div>' +
+        '<div class="field"><label>角色描述</label><textarea class="textarea" id="role-desc" placeholder="描述该角色的职责范围">' + esc(r ? r.desc : '') + '</textarea></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveRole(\'' + (isEdit ? r.id : 'new') + '\')">' + (isEdit ? '保存修改' : '确认新增') + '</button>'
+    });
+  }
+  function saveRole(roleId) {
+    const nameEl = $('#role-name'), codeEl = $('#role-code');
+    let ok = true;
+    if (!nameEl.value.trim()) { nameEl.classList.add('err'); ok = false; }
+    if (!codeEl.value.trim()) { codeEl.classList.add('err'); ok = false; }
+    if (!ok) return;
+    if (roleId === 'new') {
+      ROLES.push({ id: uid('r'), name: nameEl.value.trim(), code: codeEl.value.trim().toUpperCase(), desc: $('#role-desc').value || '—', members: 0, created: fmtDate(new Date()), builtin: false, perms: { menus: [], buttons: [] } });
+      addOpLog('平台权限管理', '新增角色「' + nameEl.value.trim() + '」', '新增');
+      toast('角色创建成功');
+    } else {
+      const r = ROLES.find(x => x.id === roleId);
+      r.name = nameEl.value.trim(); r.code = codeEl.value.trim().toUpperCase(); r.desc = $('#role-desc').value || '—';
+      addOpLog('平台权限管理', '编辑角色「' + r.name + '」', '编辑');
+      toast('角色信息已更新');
+    }
+    closeDialogs(); renderRoles(); if (currentPage === 'page-permissions') renderPermissions();
+  }
+  function delRole(roleId) {
+    const r = ROLES.find(x => x.id === roleId);
+    if (r.builtin) { toast('内置角色不可删除', 'error'); return; }
+    if (r.members > 0) { toast('该角色下仍有 ' + r.members + ' 名成员，请先调整成员归属', 'error'); return; }
+    confirmBox({
+      title: '删除角色', type: 'danger',
+      message: '确定删除角色「' + r.name + '」？',
+      desc: '删除后该角色的权限配置将一并清除，且无法恢复',
+      confirmText: '确认删除',
+      onConfirm: function () {
+        ROLES.splice(ROLES.indexOf(r), 1);
+        addOpLog('平台权限管理', '删除角色「' + r.name + '」', '删除');
+        toast('角色「' + r.name + '」已删除');
+        renderRoles(); if (currentPage === 'page-permissions') renderPermissions();
+      }
+    });
+  }
+
+  function openRolePermModal(roleId) {
+    const r = ROLES.find(x => x.id === roleId);
+    permSel = new Set(r.perms.menus.concat(r.perms.buttons));
+    permSelType = 'menus';
+    permOnChange = function () { r.perms.menus = Array.from(permSel).filter(id => !BUTTONS.includes(id)); r.perms.buttons = Array.from(permSel).filter(id => BUTTONS.includes(id)); };
+    openDialog({
+      title: '配置权限 · ' + r.name, cls: 'wide',
+      body:
+        '<div class="perm-tree"><div class="pt-title">' + icon('list', 15) + '菜单权限（控制可访问的页面）</div>' +
+        permTreeHtml(MENUS, 'rp-m') + '</div>' +
+        '<div style="height:16px"></div>' +
+        '<div class="perm-tree"><div class="pt-title">' + icon('shield', 15) + '按钮权限（控制可执行的操作）</div>' +
+        permTreeHtml([{ id: 'b', label: '操作按钮', children: BUTTONS.map(b => ({ id: b, label: b })) }], 'rp-b') + '</div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveRolePerms(\'' + r.id + '\')">保存权限配置</button>',
+      onMount: function () { syncPermTree('rp-m'); syncPermTree('rp-b'); }
+    });
+  }
+  function saveRolePerms(roleId) {
+    const r = ROLES.find(x => x.id === roleId);
+    r.perms.menus = Array.from(permSel).filter(id => !BUTTONS.includes(id));
+    r.perms.buttons = Array.from(permSel).filter(id => BUTTONS.includes(id));
+    addOpLog('平台权限管理', '配置角色「' + r.name + '」菜单与按钮权限', '编辑');
+    toast('角色「' + r.name + '」权限配置已保存');
+    closeDialogs(); renderRoles(); if (currentPage === 'page-permissions') renderPermissions();
+  }
+
+  /* ============================================================
+     页面：权限分配（功能4）
+     ============================================================ */
+  let permAssignRoleId = 'r2';
+  function renderPermissions() {
+    const r = ROLES.find(x => x.id === permAssignRoleId) || ROLES[0];
+    if (r) permAssignRoleId = r.id;
+    permSel = new Set(r.perms.menus.concat(r.perms.buttons));
+    permSelType = 'menus';
+    permOnChange = null;
+    let left = '<div class="card role-list-card">';
+    ROLES.forEach(x => {
+      left += '<div class="role-item ' + (x.id === permAssignRoleId ? 'active' : '') + '" onclick="MT.pickPermRole(\'' + x.id + '\')">' +
+        '<span class="ri-avatar">' + icon('shield', 17) + '</span>' +
+        '<div><b>' + esc(x.name) + '</b><span>' + x.members + ' 名成员</span></div></div>';
+    });
+    left += '</div>';
+    const right = '<div class="card" style="padding:20px 22px">' +
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px">' +
+      '<div><h2 style="font-size:16px;font-weight:600">' + esc(r.name) + ' · 权限分配</h2>' +
+      '<p style="font-size:12.5px;color:var(--text-3);margin-top:4px">' + esc(r.desc) + '</p></div>' +
+      '<button class="btn btn-primary" onclick="MT.savePermAssign()">' + icon('check', 15) + '保存权限</button></div>' +
+      '<div class="perm-tree"><div class="pt-title">' + icon('list', 15) + '菜单权限（页面访问控制）</div>' + permTreeHtml(MENUS, 'pa-m') + '</div>' +
+      '<div style="height:16px"></div>' +
+      '<div class="perm-tree"><div class="pt-title">' + icon('shield', 15) + '按钮权限（操作执行控制）</div>' + permTreeHtml([{ id: 'b', label: '操作按钮', children: BUTTONS.map(b => ({ id: b, label: b })) }], 'pa-b') + '</div>' +
+      '</div>';
+    const html = pageHead('权限分配', '为平台角色分配菜单与按钮权限，精细控制管理员的操作范围') +
+      '<div class="help-note">' + icon('info', 15) + '<span>选择左侧角色，勾选右侧权限后点击「保存权限」即时生效；被取消的菜单权限对应管理员将无法访问该页面。</span></div>' +
+      '<div class="split-layout">' + left + right + '</div>';
+    $('#pg-permissions').innerHTML = html;
+    syncPermTree('pa-m'); syncPermTree('pa-b');
+  }
+  function pickPermRole(id) {
+    permAssignRoleId = id;
+    const r = ROLES.find(x => x.id === id);
+    permSel = new Set(r.perms.menus.concat(r.perms.buttons));
+    renderPermissions();
+  }
+  function savePermAssign() {
+    const r = ROLES.find(x => x.id === permAssignRoleId);
+    r.perms.menus = Array.from(permSel).filter(id => !BUTTONS.includes(id));
+    r.perms.buttons = Array.from(permSel).filter(id => BUTTONS.includes(id));
+    addOpLog('平台权限管理', '为角色「' + r.name + '」分配权限', '编辑');
+    toast('角色「' + r.name + '」权限分配已保存');
+  }
+
+  /* ============================================================
+     页面：个人中心（功能5）
+     ============================================================ */
+  function renderProfile() {
+    const u = currentUser;
+    let html = pageHead('个人中心', '查看个人信息、修改个人密码与安全退出') +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">' +
+      '<div class="card" style="padding:24px 26px">' +
+      '<div style="display:flex;align-items:center;gap:16px;margin-bottom:22px">' +
+      '<span class="avatar" style="width:52px;height:52px;font-size:21px">' + esc((u.name || '管').slice(0, 1)) + '</span>' +
+      '<div><div style="font-size:17px;font-weight:600">' + esc(u.name) + '</div>' +
+      '<div style="font-size:12.5px;color:var(--text-3);margin-top:3px">' + esc(u.role) + ' · 多租户管理端</div></div></div>' +
+      '<div class="detail-grid">' +
+      '<div class="detail-item"><div class="d-label">登录账号</div><div class="d-value">' + esc(u.account) + '</div></div>' +
+      '<div class="detail-item"><div class="d-label">所属角色</div><div class="d-value">' + esc(u.role) + '</div></div>' +
+      '<div class="detail-item"><div class="d-label">手机号</div><div class="d-value">' + esc(u.phone) + '</div></div>' +
+      '<div class="detail-item"><div class="d-label">邮箱</div><div class="d-value">' + esc(u.email) + '</div></div>' +
+      '<div class="detail-item"><div class="d-label">最近登录</div><div class="d-value">' + esc(u.lastLogin) + '</div></div>' +
+      '<div class="detail-item"><div class="d-label">最近登录 IP</div><div class="d-value">10.12.3.8</div></div>' +
+      '</div>' +
+      '<button class="btn btn-danger-ghost" style="margin-top:20px" onclick="MT.doLogout()">' + icon('logout', 15) + '退出登录</button>' +
+      '</div>' +
+      '<div class="card" style="padding:24px 26px">' +
+      '<h3 style="font-size:15px;font-weight:600;margin-bottom:18px">' + icon('key', 15) + ' 修改密码</h3>' +
+      '<div class="field"><label>原密码<span class="req">*</span></label><input class="input" type="password" id="pwd-old" placeholder="请输入原密码"><div class="err-msg">原密码错误</div></div>' +
+      '<div class="field"><label>新密码<span class="req">*</span></label><input class="input" type="password" id="pwd-new" placeholder="至少 8 位，建议包含字母与数字"><div class="err-msg">新密码至少 8 位</div></div>' +
+      '<div class="field"><label>确认新密码<span class="req">*</span></label><input class="input" type="password" id="pwd-confirm" placeholder="再次输入新密码"><div class="err-msg">两次输入的密码不一致</div></div>' +
+      '<button class="btn btn-primary" onclick="MT.savePwd()">' + icon('check', 15) + '确认修改</button>' +
+      '</div></div>';
+    $('#pg-profile').innerHTML = html;
+  }
+  function savePwd() {
+    const oldEl = $('#pwd-old'), newEl = $('#pwd-new'), cfEl = $('#pwd-confirm');
+    let ok = true;
+    if (oldEl.value !== '123456') { oldEl.classList.add('err'); ok = false; }
+    if (newEl.value.length < 8) { newEl.classList.add('err'); ok = false; }
+    if (cfEl.value !== newEl.value) { cfEl.classList.add('err'); ok = false; }
+    if (!ok) return;
+    addOpLog('平台权限管理', '修改个人密码（' + currentUser.account + '）', '编辑');
+    oldEl.value = ''; newEl.value = ''; cfEl.value = '';
+    toast('密码修改成功，请牢记新密码');
+  }
+  /* ============================================================
+     页面：租户列表（功能6）+ 开通/编辑/续期/状态/删除（功能7-10）
+     ============================================================ */
+  function tenantRow(t) {
+    const expDays = daysUntil(t.expire);
+    const statusType = t.status;
+    const expiryHtml = '<div class="cell-main num">' + t.expire + '</div>' +
+      (statusType === '即将到期' ? '<div class="cell-sub" style="color:var(--danger)">剩 ' + expDays + ' 天到期</div>' :
+        (expDays > 0 && expDays < 30 && statusType !== '已禁用' ? '<div class="cell-sub" style="color:var(--warning)">剩 ' + expDays + ' 天到期</div>' :
+          (statusType === '已禁用' ? '<div class="cell-sub">服务已停止</div>' : '<div class="cell-sub">服务正常</div>')));
+    let actions = '';
+    if (t.status === '正常' || t.status === '即将到期') {
+      actions += '<button class="link-btn" onclick="MT.togglePause(\'' + t.id + '\')">暂停</button>';
+    } else if (t.status === '已暂停') {
+      actions += '<button class="link-btn" onclick="MT.togglePause(\'' + t.id + '\')">恢复</button>';
+    }
+    if (t.status === '已禁用') {
+      actions += '<button class="link-btn" onclick="MT.toggleDisable(\'' + t.id + '\')">启用</button>';
+    } else {
+      actions += '<button class="link-btn gray" onclick="MT.toggleDisable(\'' + t.id + '\')">禁用</button>';
+    }
+    actions += '<button class="link-btn danger" onclick="MT.delTenant(\'' + t.id + '\')">删除</button>';
+    return '<tr>' +
+      '<td><div class="tenant-tag"><span class="t-icon">' + icon('building', 16) + '</span><div><div class="cell-main">' + esc(t.name) + '</div><div class="cell-sub">' + esc(t.region) + ' · ' + esc(t.email) + '</div></div></div></td>' +
+      '<td>' + esc(t.contact) + '</td>' +
+      '<td class="num">' + esc(t.phone) + '</td>' +
+      '<td>' + statusBadge(t.status) + '</td>' +
+      '<td>' + quotaCell(t.devUsed, t.devQuota) + '</td>' +
+      '<td>' + quotaCell(t.accUsed, t.accQuota) + '</td>' +
+      '<td>' + expiryHtml + '</td>' +
+      '<td><div class="actions">' +
+      '<button class="link-btn" onclick="MT.openTenantDetail(\'' + t.id + '\')">详情</button>' +
+      '<button class="link-btn" onclick="MT.openTenantEdit(\'' + t.id + '\')">编辑</button>' +
+      '<button class="link-btn" onclick="MT.openTenantRenew(\'' + t.id + '\')">续期</button>' +
+      actions +
+      '</div></td></tr>';
+  }
+
+  function renderTenants(page) {
+    if (page) tenantPage = page;
+    const kw = tenantSearch.toLowerCase();
+    let list = TENANTS.filter(t =>
+      (tenantStatus === '全部' || t.status === tenantStatus) &&
+      (!kw || t.name.toLowerCase().includes(kw) || t.contact.includes(kw) || t.phone.replace(/-/g, '').includes(kw.replace(/-/g, ''))));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (tenantPage > pages) tenantPage = pages;
+    const rows = list.slice((tenantPage - 1) * PAGE_SIZE, tenantPage * PAGE_SIZE);
+    const stats = [
+      { n: TENANTS.length, label: '租户总数', ic: 'building', cls: 'green' },
+      { n: TENANTS.filter(t => t.status === '正常').length, label: '正常运营', ic: 'check', cls: 'green' },
+      { n: TENANTS.filter(t => t.status === '已暂停').length, label: '服务已暂停', ic: 'pause', cls: 'orange' },
+      { n: TENANTS.filter(t => t.status === '即将到期').length, label: '即将到期', ic: 'alert', cls: 'red' }
+    ];
+    let html = pageHead('租户列表', '多租户核心数据看板：查看所有租户的基础信息、配额使用与服务状态') +
+      '<div class="stat-row">' + stats.map(s =>
+        '<div class="stat-card"><div class="stat-icon ' + s.cls + '">' + icon(s.ic, 22) + '</div>' +
+        '<div class="stat-info"><div class="stat-num">' + s.n + '</div><div class="stat-label">' + s.label + '</div></div></div>').join('') + '</div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="搜索租户名称 / 联系人 / 电话" value="' + esc(tenantSearch) + '" oninput="MT._tenantSearch(this.value)"></div>' +
+      '<select class="select" onchange="MT._tenantStatus(this.value)">' +
+      ['全部', '正常', '已暂停', '已禁用', '即将到期'].map(s => '<option ' + (tenantStatus === s ? 'selected' : '') + '>' + s + '</option>').join('') +
+      '</select>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-primary" onclick="MT.openTenantWizard()">' + icon('plus', 15) + '开通租户</button>' +
+      '</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>租户名称</th><th>联系人</th><th>联系电话</th><th>租户状态</th><th>设备配额</th><th>账号配额</th><th>服务有效期至</th><th style="width:260px">操作</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="8"><div class="table-empty">' + icon('building', 40) + '<p>未找到匹配的租户</p></div></td></tr>';
+    rows.forEach(t => { html += tenantRow(t); });
+    html += '</tbody></table></div>' + pagination(list.length, tenantPage, PAGE_SIZE, 'renderTenants') + '</div>';
+    $('#pg-tenants').innerHTML = html;
+  }
+  function _tenantSearch(v) { tenantSearch = v; tenantPage = 1; renderTenants(); }
+  function _tenantStatus(v) { tenantStatus = v; tenantPage = 1; renderTenants(); }
+
+  function featTags(t) {
+    const on = FEATURE_DEFS.filter(f => t.features[f.key]).map(f => f.name);
+    return on.length ? on.map(n => '<span class="badge-role">' + esc(n) + '</span>').join(' ') : '<span style="color:var(--text-3);font-size:12.5px">未开通任何功能</span>';
+  }
+
+  /* ---------- 开通租户向导（功能7） ---------- */
+  let wiz = { step: 1, data: {} };
+  function openTenantWizard() {
+    wiz = { step: 1, data: { devQuota: 100, accQuota: 20, expire: addYears(new Date(), 1) } };
+    renderWizard();
+  }
+  function renderWizard() {
+    const d = wiz.data;
+    const steps = [1, 2, 3].map(n => {
+      const state = n < wiz.step ? 'done' : n === wiz.step ? 'active' : '';
+      return '<div class="step ' + state + '"><span class="step-num">' + (state === 'done' ? '✓' : n) + '</span>' +
+        ['基本信息', '配额设置', '初始化管理员'][n - 1] + '</div>';
+    }).join('<div class="step-line ' + (wiz.step > 1 ? 'done' : '') + '"></div>');
+    const chip = (field, vals) => vals.map(v => '<button type="button" class="chip ' + (d[field] === v ? 'on' : '') + '" onclick="MT.wizChip(\'' + field + '\',' + v + ')">' + v + '</button>').join('');
+    let body = '<div class="steps">' + steps + '</div>';
+    if (wiz.step === 1) {
+      body += '<div class="field-row">' +
+        '<div class="field"><label>租户名称<span class="req">*</span></label><input class="input" id="w-name" value="' + esc(d.name || '') + '" placeholder="例如：秦岭国家公园"><div class="err-msg">请输入租户名称</div></div>' +
+        '<div class="field"><label>所属区域</label><select class="select" id="w-region"><option>东北</option><option>西北</option><option>华南</option><option>西南</option><option>华中</option><option>华东</option></select></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>联系人<span class="req">*</span></label><input class="input" id="w-contact" value="' + esc(d.contact || '') + '" placeholder="请输入联系人姓名"><div class="err-msg">请输入联系人</div></div>' +
+        '<div class="field"><label>联系电话<span class="req">*</span></label><input class="input" id="w-phone" value="' + esc(d.phone || '') + '" placeholder="例如：13800000000"><div class="err-msg">请输入联系电话</div></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>邮箱</label><input class="input" id="w-email" value="' + esc(d.email || '') + '" placeholder="用于接收通知邮件"></div>' +
+        '<div class="field"><label>备注</label><input class="input" id="w-remark" value="' + esc(d.remark || '') + '" placeholder="选填"></div></div>';
+    } else if (wiz.step === 2) {
+      body += '<div class="field"><label>设备最大数量<span class="req">*</span></label>' +
+        '<div class="chip-input-wrap"><input class="chip-input" type="number" id="w-dev" min="10" step="10" value="' + d.devQuota + '" oninput="MT.wizInput(\'devQuota\',this.value)">' +
+        '<div class="chip-row">' + chip('devQuota', [50, 100, 200, 500]) + '</div></div>' +
+        '<div class="hint">超出配额后，租户侧将无法注册新设备</div></div>' +
+        '<div class="field"><label>账号最大数量<span class="req">*</span></label>' +
+        '<div class="chip-input-wrap"><input class="chip-input" type="number" id="w-acc" min="5" step="5" value="' + d.accQuota + '" oninput="MT.wizInput(\'accQuota\',this.value)">' +
+        '<div class="chip-row">' + chip('accQuota', [10, 20, 50, 100]) + '</div></div>' +
+        '<div class="hint">租户内可创建的账号总数上限</div></div>' +
+        '<div class="field"><label>服务有效期至<span class="req">*</span></label><input class="input" type="date" id="w-expire" value="' + d.expire + '" onchange="MT.wizInput(\'expire\',this.value)"><div class="hint">到期后系统将自动禁用该租户服务</div></div>';
+    } else {
+      body += '<div class="help-note">' + icon('info', 15) + '<span>开通后将自动为租户创建超级管理员账号，用于登录租户侧野保平台。</span></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>租户管理员账号<span class="req">*</span></label><input class="input" id="w-admin-acc" value="' + esc(d.adminAcc || '') + '" placeholder="例如：admin.tls"><div class="err-msg">请输入管理员账号</div></div>' +
+        '<div class="field"><label>管理员姓名<span class="req">*</span></label><input class="input" id="w-admin-name" value="' + esc(d.adminName || '') + '" placeholder="请输入姓名"><div class="err-msg">请输入姓名</div></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>初始密码<span class="req">*</span></label><div style="display:flex;gap:8px"><input class="input" id="w-admin-pwd" type="text" value="' + esc(d.adminPwd || '') + '" placeholder="请设置初始密码" style="flex:1"><button class="btn btn-default" type="button" onclick="MT.wizGenPwd()">' + icon('refresh', 15) + '随机生成</button></div><div class="err-msg">请输入初始密码</div></div>' +
+        '<div class="field"><label>确认密码<span class="req">*</span></label><input class="input" type="text" id="w-admin-pwd2" placeholder="再次输入初始密码"><div class="err-msg">两次输入的密码不一致</div></div></div>';
+    }
+    const footer = '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+      (wiz.step > 1 ? '<button class="btn btn-default" onclick="MT.wizPrev()">上一步</button>' : '') +
+      (wiz.step < 3 ? '<button class="btn btn-primary" onclick="MT.wizNext()">下一步</button>' : '<button class="btn btn-primary" onclick="MT.wizConfirm()">' + icon('check', 15) + '确认开通</button>');
+    openDialog({ title: '开通租户', cls: 'wide', body: body, footer: footer });
+  }
+  function wizChip(field, v) { wiz.data[field] = v; renderWizard(); }
+  function wizInput(field, v) { wiz.data[field] = field === 'devQuota' || field === 'accQuota' ? (parseInt(v) || 0) : v; }
+  function wizGenPwd() {
+    $('#w-admin-pwd').value = 'Tenant@' + Math.random().toString(36).slice(2, 7);
+    wiz.data.adminPwd = $('#w-admin-pwd').value;
+  }
+  function wizCollect() {
+    if (wiz.step === 1) {
+      wiz.data.name = $('#w-name').value.trim();
+      wiz.data.region = $('#w-region').value;
+      wiz.data.contact = $('#w-contact').value.trim();
+      wiz.data.phone = $('#w-phone').value.trim();
+      wiz.data.email = $('#w-email').value.trim();
+      wiz.data.remark = $('#w-remark').value.trim();
+      let ok = true;
+      if (!wiz.data.name) { $('#w-name').classList.add('err'); ok = false; }
+      if (!wiz.data.contact) { $('#w-contact').classList.add('err'); ok = false; }
+      if (!wiz.data.phone) { $('#w-phone').classList.add('err'); ok = false; }
+      return ok;
+    }
+    if (wiz.step === 2) {
+      if (!wiz.data.expire || wiz.data.devQuota < 1 || wiz.data.accQuota < 1) { toast('请完整填写配额与有效期', 'error'); return false; }
+      return true;
+    }
+    if (wiz.step === 3) {
+      wiz.data.adminAcc = $('#w-admin-acc').value.trim();
+      wiz.data.adminName = $('#w-admin-name').value.trim();
+      wiz.data.adminPwd = $('#w-admin-pwd').value.trim();
+      const pwd2 = $('#w-admin-pwd2').value.trim();
+      let ok = true;
+      if (!wiz.data.adminAcc) { $('#w-admin-acc').classList.add('err'); ok = false; }
+      if (!wiz.data.adminName) { $('#w-admin-name').classList.add('err'); ok = false; }
+      if (!wiz.data.adminPwd) { $('#w-admin-pwd').classList.add('err'); ok = false; }
+      if (pwd2 !== wiz.data.adminPwd) { $('#w-admin-pwd2').classList.add('err'); ok = false; }
+      return ok;
+    }
+    return true;
+  }
+  function wizNext() {
+    if (!wizCollect()) return;
+    wiz.step++; renderWizard();
+  }
+  function wizPrev() { wiz.step--; renderWizard(); }
+  function wizConfirm() {
+    if (!wizCollect()) return;
+    const d = wiz.data;
+    const t = {
+      id: uid('t'), name: d.name, contact: d.contact, phone: d.phone, region: d.region || '其他', email: d.email || '-',
+      status: '正常', devUsed: 0, devQuota: d.devQuota, accUsed: 0, accQuota: d.accQuota, expire: d.expire,
+      features: { ai: true, device: true, storage: true, notify: true, report: false, collab: false }, created: todayStr()
+    };
+    TENANTS.unshift(t);
+    TENANT_ACCOUNTS[t.id] = [{ account: d.adminAcc, name: d.adminName, role: '租户超级管理员', status: '正常', lastLogin: '—' }];
+    addLifecycleLog(d.name, '开通', '新增租户，配额：设备' + d.devQuota + '/账号' + d.accQuota + '，初始化管理员 ' + d.adminAcc);
+    addOpLog('租户核心管理', '开通租户「' + d.name + '」，配额：设备' + d.devQuota + '/账号' + d.accQuota, '新增');
+    BELL_NOTIFS.unshift({ time: '刚刚', title: '租户开通成功', body: d.name + ' 已成功开通', read: false });
+    closeDialogs();
+    tenantPage = 1; tenantSearch = ''; tenantStatus = '全部';
+    renderTenants();
+    toast('租户「' + d.name + '」开通成功');
+  }
+
+  /* ---------- 租户详情（功能6/9 附注） ---------- */
+  function openTenantDetail(id) {
+    const t = TENANTS.find(x => x.id === id);
+    const expDays = daysUntil(t.expire);
+    openDialog({
+      title: '租户详情 · ' + t.name, cls: 'wide',
+      body:
+        '<div class="detail-grid">' +
+        '<div class="detail-item"><div class="d-label">租户状态</div><div class="d-value">' + statusBadge(t.status) + (t.status === '即将到期' ? ' <span style="font-size:12px;color:var(--danger)">剩 ' + expDays + ' 天到期</span>' : '') + '</div></div>' +
+        '<div class="detail-item"><div class="d-label">开通时间</div><div class="d-value">' + esc(t.created) + '</div></div>' +
+        '<div class="detail-item"><div class="d-label">联系人</div><div class="d-value">' + esc(t.contact) + '</div></div>' +
+        '<div class="detail-item"><div class="d-label">联系电话</div><div class="d-value">' + esc(t.phone) + '</div></div>' +
+        '<div class="detail-item"><div class="d-label">邮箱</div><div class="d-value">' + esc(t.email) + '</div></div>' +
+        '<div class="detail-item"><div class="d-label">所属区域</div><div class="d-value">' + esc(t.region) + '</div></div>' +
+        '</div>' +
+        '<div class="detail-section"><div class="ds-title">' + icon('bar', 15) + '配额使用情况</div>' +
+        '<div class="field"><label style="margin-bottom:8px">设备配额</label>' + quotaCell(t.devUsed, t.devQuota) + '</div>' +
+        '<div class="field" style="margin-bottom:0"><label style="margin-bottom:8px">账号配额</label>' + quotaCell(t.accUsed, t.accQuota) + '</div></div>' +
+        '<div class="detail-section"><div class="ds-title">' + icon('toggle', 15) + '已开通功能</div>' + featTags(t) + '</div>' +
+        '<div class="detail-section"><div class="ds-title">' + icon('calendar', 15) + '服务有效期</div>' +
+        '<p style="font-size:13.5px">' + esc(t.created) + ' 至 <b>' + esc(t.expire) + '</b></p>' +
+        '<div class="help-note" style="margin-top:10px;margin-bottom:0">' + icon('info', 15) + '<span>租户服务到期后，系统将<b>自动禁用</b>该租户，直到完成续期。</span></div></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">关闭</button>' +
+        '<button class="btn btn-primary" onclick="MT.closeDialogs();MT.openTenantRenew(\'' + t.id + '\')">立即续期</button>'
+    });
+  }
+
+  /* ---------- 租户编辑（功能8） ---------- */
+  function openTenantEdit(id) {
+    const t = TENANTS.find(x => x.id === id);
+    openDialog({
+      title: '编辑租户 · ' + t.name,
+      body:
+        '<div class="field-row">' +
+        '<div class="field"><label>租户名称<span class="req">*</span></label><input class="input" id="te-name" value="' + esc(t.name) + '"><div class="err-msg">请输入租户名称</div></div>' +
+        '<div class="field"><label>所属区域</label><select class="select" id="te-region">' + ['东北', '西北', '华南', '西南', '华中', '华东'].map(r => '<option ' + (t.region === r ? 'selected' : '') + '>' + r + '</option>').join('') + '</select></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>联系人<span class="req">*</span></label><input class="input" id="te-contact" value="' + esc(t.contact) + '"><div class="err-msg">请输入联系人</div></div>' +
+        '<div class="field"><label>联系电话<span class="req">*</span></label><input class="input" id="te-phone" value="' + esc(t.phone) + '"><div class="err-msg">请输入联系电话</div></div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>邮箱</label><input class="input" id="te-email" value="' + esc(t.email) + '"></div>' +
+        '<div class="field"><label>备注</label><input class="input" id="te-remark" value="' + esc(t.remark || '') + '"></div></div>' +
+        '<div class="detail-section" style="margin-top:4px"><div class="ds-title">' + icon('settings', 15) + '配额调整</div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>设备最大数量</label><input class="input" type="number" id="te-dev" value="' + t.devQuota + '" min="10" step="10"><div class="hint">当前已使用 ' + t.devUsed + ' 台，调整后不可低于已用数量</div></div>' +
+        '<div class="field"><label>账号最大数量</label><input class="input" type="number" id="te-acc" value="' + t.accQuota + '" min="5" step="5"><div class="hint">当前已使用 ' + t.accUsed + ' 个，调整后不可低于已用数量</div></div></div>' +
+        '<div class="field" style="margin-bottom:0"><label>服务有效期至</label><input class="input" type="date" id="te-expire" value="' + t.expire + '"></div></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveTenantEdit(\'' + t.id + '\')">保存修改</button>'
+    });
+  }
+  function saveTenantEdit(id) {
+    const t = TENANTS.find(x => x.id === id);
+    const nameEl = $('#te-name'), contactEl = $('#te-contact'), phoneEl = $('#te-phone');
+    let ok = true;
+    if (!nameEl.value.trim()) { nameEl.classList.add('err'); ok = false; }
+    if (!contactEl.value.trim()) { contactEl.classList.add('err'); ok = false; }
+    if (!phoneEl.value.trim()) { phoneEl.classList.add('err'); ok = false; }
+    const newDev = parseInt($('#te-dev').value) || 0, newAcc = parseInt($('#te-acc').value) || 0;
+    if (newDev < t.devUsed) { toast('设备配额不可低于已使用数量（' + t.devUsed + '）', 'error'); ok = false; }
+    if (newAcc < t.accUsed) { toast('账号配额不可低于已使用数量（' + t.accUsed + '）', 'error'); ok = false; }
+    if (!ok) return;
+    const oldName = t.name;
+    t.name = nameEl.value.trim(); t.region = $('#te-region').value; t.contact = contactEl.value.trim();
+    t.phone = phoneEl.value.trim(); t.email = $('#te-email').value.trim(); t.remark = $('#te-remark').value.trim();
+    t.devQuota = newDev; t.accQuota = newAcc; t.expire = $('#te-expire').value || t.expire;
+    addLifecycleLog(t.name, '编辑', (oldName !== t.name ? '租户名称修改，' : '') + '配额调整：设备' + t.devQuota + '/账号' + t.accQuota);
+    addOpLog('租户核心管理', '编辑租户「' + t.name + '」配额与基础信息', '编辑');
+    closeDialogs(); renderTenants();
+    toast('租户「' + t.name + '」信息已更新');
+  }
+
+  /* ---------- 租户续期（功能8） ---------- */
+  let renewData = {};
+  function openTenantRenew(id) {
+    const t = TENANTS.find(x => x.id === id);
+    renewData = { tenantId: id, mode: '1y' };
+    renderRenew(t);
+  }
+  function renderRenew(t) {
+    const rd = renewData;
+    const newExp = rd.mode === '1y' ? addYears(t.expire, 1) : rd.mode === '2y' ? addYears(t.expire, 2) : (rd.custom || t.expire);
+    const radio = (mode, label, sub) => '<label style="display:flex;align-items:center;gap:9px;border:1px solid ' + (rd.mode === mode ? 'var(--primary)' : 'var(--border-strong)') + ';border-radius:8px;padding:11px 13px;cursor:pointer;background:' + (rd.mode === mode ? 'var(--primary-light)' : '#fff') + '" onclick="MT.renewMode(\'' + mode + '\',\'' + t.id + '\')"><input type="radio" name="renew" ' + (rd.mode === mode ? 'checked' : '') + ' style="accent-color:var(--primary)"><span style="font-size:13.5px;color:var(--text)">' + label + '</span><span style="font-size:12px;color:var(--text-3)">' + sub + '</span></label>';
+    openDialog({
+      title: '服务续期 · ' + t.name,
+      body:
+        '<div class="detail-item" style="margin-bottom:16px"><div class="d-label">当前服务有效期至</div><div class="d-value">' + esc(t.expire) + '（' + (daysUntil(t.expire) > 0 ? '剩 ' + daysUntil(t.expire) + ' 天' : '已到期') + '）</div></div>' +
+        '<div style="display:flex;flex-direction:column;gap:9px">' + radio('1y', '续期 1 年', '到期后顺延 365 天') + radio('2y', '续期 2 年', '到期后顺延 730 天') + '</div>' +
+        '<div class="field" style="margin-top:14px"><label>或自定义到期日期</label><input class="input" type="date" id="rn-custom" value="' + (rd.custom || '') + '" onchange="MT.renewCustom(this.value)"></div>' +
+        '<div class="help-note" style="margin-top:14px;margin-bottom:0">' + icon('calendar', 15) + '<span>续期后新有效期：<b>' + esc(newExp) + '</b>。续期操作会同时通知租户联系人。</span></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveRenew()">' + icon('check', 15) + '确认续期</button>'
+    });
+  }
+  function renewMode(m, tid) { renewData.mode = m; renderRenew(TENANTS.find(x => x.id === tid)); }
+  function renewCustom(v) { if (v) { renewData.mode = 'custom'; renewData.custom = v; } }
+  function saveRenew() {
+    const t = TENANTS.find(x => x.id === renewData.tenantId);
+    const newExp = renewData.mode === '1y' ? addYears(t.expire, 1) : renewData.mode === '2y' ? addYears(t.expire, 2) : (renewData.custom || addYears(t.expire, 1));
+    t.expire = newExp;
+    if (t.status === '已禁用') { t.status = '正常'; }
+    if (t.status === '即将到期') { t.status = '正常'; }
+    addLifecycleLog(t.name, '续期', '服务有效期延长至 ' + newExp);
+    addOpLog('租户核心管理', '续期租户「' + t.name + '」服务至 ' + newExp, '续期');
+    BELL_NOTIFS.unshift({ time: '刚刚', title: '续期成功', body: t.name + ' 服务已续期至 ' + newExp, read: false });
+    closeDialogs(); renderTenants();
+    toast('租户「' + t.name + '」服务已续期至 ' + newExp);
+  }
+
+  /* ---------- 租户状态管控（功能9） ---------- */
+  function togglePause(id) {
+    const t = TENANTS.find(x => x.id === id);
+    const toPause = t.status === '正常' || t.status === '即将到期';
+    confirmBox({
+      title: toPause ? '暂停租户服务' : '恢复租户服务', type: toPause ? 'warning' : 'info',
+      message: (toPause ? '暂停' : '恢复') + '租户「' + t.name + '」的服务？',
+      desc: toPause ? '暂停后租户侧所有账号将无法登录使用，但数据将完整保留' : '恢复后租户侧可立即恢复正常使用',
+      confirmText: toPause ? '确认暂停' : '确认恢复',
+      onConfirm: function () {
+        t.status = toPause ? '已暂停' : '正常';
+        addLifecycleLog(t.name, toPause ? '暂停' : '恢复', toPause ? '暂停租户服务，租户侧账号暂时无法登录' : '恢复暂停的租户服务');
+        addOpLog('租户核心管理', (toPause ? '暂停' : '恢复') + '租户服务「' + t.name + '」', '暂停恢复');
+        renderTenants();
+        toast('租户「' + t.name + '」服务已' + (toPause ? '暂停' : '恢复'));
+      }
+    });
+  }
+  function toggleDisable(id) {
+    const t = TENANTS.find(x => x.id === id);
+    const toDisable = t.status !== '已禁用';
+    confirmBox({
+      title: toDisable ? '禁用租户' : '启用租户', type: toDisable ? 'danger' : 'info',
+      message: (toDisable ? '禁用' : '启用') + '租户「' + t.name + '」？',
+      desc: toDisable ? '禁用后该租户将无法访问平台服务（与暂停不同，通常用于违规/欠费处理）' : '启用后该租户恢复正常使用，其历史数据完整保留',
+      confirmText: toDisable ? '确认禁用' : '确认启用',
+      onConfirm: function () {
+        t.status = toDisable ? '已禁用' : '正常';
+        addLifecycleLog(t.name, toDisable ? '禁用' : '启用', toDisable ? '禁用租户账号，停止全部服务' : '启用租户账号，恢复正常服务');
+        addOpLog('租户核心管理', (toDisable ? '禁用' : '启用') + '租户「' + t.name + '」', '启用禁用');
+        renderTenants();
+        toast('租户「' + t.name + '」已' + (toDisable ? '禁用' : '启用'));
+      }
+    });
+  }
+
+  /* ---------- 租户删除（功能10，二次确认） ---------- */
+  let delTenantReady = false;
+  function delTenant(id) {
+    const t = TENANTS.find(x => x.id === id);
+    window.MT._delTid = id;
+    window.MT._delTyped = false;
+    openDialog({
+      title: '删除租户 · ' + t.name, cls: 'narrow',
+      body:
+        '<div class="danger-box"><div class="db-icon">' + icon('alert', 20) + '</div><div><b>此操作不可恢复，请谨慎确认</b>' +
+        '<p>删除后，该租户关联的基础数据（设备、账号、影像、日志等）将全部清空，且无法恢复。</p>' +
+        '<div class="warn-line">高危操作：请确保该租户无未导出的重要数据</div></div></div>' +
+        '<div class="confirm-check"><label><input type="checkbox" id="del-chk" onchange="MT._delCheck(this.checked)"> 我已了解删除后数据不可恢复的风险</label></div>' +
+        '<div class="confirm-input"><label>请输入租户名称「' + esc(t.name) + '」以确认删除</label>' +
+        '<input id="del-input" placeholder="请输入租户名称" oninput="MT._delInput(this.value)"></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-danger" id="del-btn" disabled onclick="MT._delTenantFinal(\'' + t.id + '\')">确认删除</button>'
+    });
+    delTenantReady = false;
+  }
+  function _delCheck(v) { delTenantReady = v && (window.MT._delTyped || false); $('#del-btn').disabled = !delTenantReady; }
+  function _delInput(v) {
+    const t = TENANTS.find(x => x.id === window.MT._delTid);
+    const match = v === t.name;
+    window.MT._delTyped = match;
+    const input = $('#del-input');
+    input.classList.toggle('matched', match);
+    delTenantReady = match && $('#del-chk').checked;
+    $('#del-btn').disabled = !delTenantReady;
+  }
+  function _delTenantFinal(id) {
+    const t = TENANTS.find(x => x.id === id);
+    window.MT._delTid = id;
+    addLifecycleLog(t.name, '删除', '删除租户及其全部关联基础数据');
+    addOpLog('租户核心管理', '删除租户「' + t.name + '」及其关联数据', '删除');
+    TENANTS.splice(TENANTS.indexOf(t), 1);
+    closeDialogs(); renderTenants();
+    toast('租户「' + t.name + '」已删除', 'info');
+  }
+  function switchWithHandler(id, checked, fn) {
+    _swRegister(id, fn);
+    return '<label class="switch"><input type="checkbox" id="' + id + '" ' + (checked ? 'checked' : '') + ' onchange="MT._swChange(this,\'' + id + '\')"><span class="slider"></span></label>';
+  }
+
+  /* ============================================================
+     页面：租户角色模板管理（功能11）
+     ============================================================ */
+  function renderTemplates() {
+    let html = pageHead('租户角色模板管理', '配置租户侧的角色权限模板，定义租户内可使用的野保平台功能权限') +
+      '<div class="help-note">' + icon('info', 15) + '<span>模板定义了租户侧各角色可使用的功能（设备管理、影像查看、AI物种识别等），租户开通后可按模板快速初始化其内部角色。</span></div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0"><div class="spacer"></div>' +
+      '<button class="btn btn-primary" onclick="MT.openTemplateModal(null)">' + icon('plus', 15) + '新增模板</button></div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>模板名称</th><th>模板编码</th><th>描述</th><th>功能权限</th><th>创建时间</th><th style="width:140px">操作</th>' +
+      '</tr></thead><tbody>';
+    TEMPLATES.forEach(tp => {
+      html += '<tr>' +
+        '<td><div class="cell-main">' + esc(tp.name) + (tp.builtin ? ' ' + badge('内置', 'info', false) : '') + '</div></td>' +
+        '<td><span style="font-family:var(--mono);font-size:12.5px;color:var(--text-2)">' + esc(tp.code) + '</span></td>' +
+        '<td style="color:var(--text-2)">' + esc(tp.desc) + '</td>' +
+        '<td>' + tp.feats.map(f => '<span class="badge-role">' + esc(f) + '</span>').join(' ') + '</td>' +
+        '<td class="num">' + esc(tp.created) + '</td>' +
+        '<td><div class="actions">' +
+        '<button class="link-btn" onclick="MT.openTemplateModal(\'' + tp.id + '\')">编辑</button>' +
+        (tp.builtin ? '' : '<button class="link-btn danger" onclick="MT.delTemplate(\'' + tp.id + '\')">删除</button>') +
+        '</div></td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    $('#pg-templates').innerHTML = html;
+  }
+  function openTemplateModal(tpId) {
+    const isEdit = !!tpId;
+    const tp = isEdit ? TEMPLATES.find(x => x.id === tpId) : null;
+    const feats = isEdit ? tp.feats : ['设备管理', '影像查看'];
+    const checkboxes = ALL_TENANT_FEATS.map(f =>
+      '<label class="pt-child" style="margin-right:14px"><input type="checkbox" value="' + f + '" class="tp-feat" ' + (feats.includes(f) ? 'checked' : '') + '>' + f + '</label>').join('');
+    openDialog({
+      title: isEdit ? '编辑角色模板' : '新增角色模板',
+      body:
+        '<div class="field-row">' +
+        '<div class="field"><label>模板名称<span class="req">*</span></label><input class="input" id="tp-name" value="' + esc(tp ? tp.name : '') + '" placeholder="例如：租户巡护员"><div class="err-msg">请输入模板名称</div></div>' +
+        '<div class="field"><label>模板编码<span class="req">*</span></label><input class="input" id="tp-code" value="' + esc(tp ? tp.code : '') + '" placeholder="例如：PATROL"><div class="err-msg">请输入模板编码</div></div></div>' +
+        '<div class="field"><label>模板描述</label><textarea class="textarea" id="tp-desc" placeholder="描述该模板的职责范围">' + esc(tp ? tp.desc : '') + '</textarea></div>' +
+        '<div class="field" style="margin-bottom:0"><label>功能权限<span class="req">*</span>（勾选租户内可使用的能力）</label>' +
+        '<div class="perm-tree"><div class="pt-title">' + icon('zap', 15) + '野保平台功能</div><div class="pt-children" style="padding:6px 4px">' + checkboxes + '</div></div></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveTemplate(\'' + (isEdit ? tp.id : 'new') + '\')">' + (isEdit ? '保存修改' : '确认新增') + '</button>'
+    });
+  }
+  function saveTemplate(tpId) {
+    const nameEl = $('#tp-name'), codeEl = $('#tp-code');
+    let ok = true;
+    if (!nameEl.value.trim()) { nameEl.classList.add('err'); ok = false; }
+    if (!codeEl.value.trim()) { codeEl.classList.add('err'); ok = false; }
+    const feats = Array.prototype.filter.call($$('.tp-feat'), i => i.checked).map(i => i.value);
+    if (!feats.length) { toast('请至少勾选一项功能权限', 'error'); ok = false; }
+    if (!ok) return;
+    if (tpId === 'new') {
+      TEMPLATES.push({ id: uid('tp'), name: nameEl.value.trim(), code: codeEl.value.trim().toUpperCase(), desc: $('#tp-desc').value || '—', feats: feats, created: fmtDate(new Date()), builtin: false });
+      addOpLog('租户权限管控', '新增角色模板「' + nameEl.value.trim() + '」', '新增');
+      toast('角色模板创建成功');
+    } else {
+      const tp = TEMPLATES.find(x => x.id === tpId);
+      tp.name = nameEl.value.trim(); tp.code = codeEl.value.trim().toUpperCase(); tp.desc = $('#tp-desc').value || '—'; tp.feats = feats;
+      addOpLog('租户权限管控', '编辑角色模板「' + tp.name + '」功能权限', '编辑');
+      toast('角色模板已更新');
+    }
+    closeDialogs(); renderTemplates();
+  }
+  function delTemplate(tpId) {
+    const tp = TEMPLATES.find(x => x.id === tpId);
+    if (tp.builtin) { toast('内置模板不可删除', 'error'); return; }
+    confirmBox({
+      title: '删除模板', type: 'danger',
+      message: '确定删除角色模板「' + tp.name + '」？',
+      desc: '删除后租户开通时将不再提供该模板选项',
+      confirmText: '确认删除',
+      onConfirm: function () {
+        TEMPLATES.splice(TEMPLATES.indexOf(tp), 1);
+        addOpLog('租户权限管控', '删除角色模板「' + tp.name + '」', '删除');
+        toast('模板「' + tp.name + '」已删除');
+        renderTemplates();
+      }
+    });
+  }
+
+  /* ============================================================
+     页面：租户账号管控（功能12）
+     ============================================================ */
+  let acctTenantId = 't01';
+  function renderTenantAccounts() {
+    if (!TENANT_ACCOUNTS[acctTenantId]) acctTenantId = Object.keys(TENANT_ACCOUNTS)[0];
+    const t = TENANTS.find(x => x.id === acctTenantId);
+    const accounts = TENANT_ACCOUNTS[acctTenantId] || [];
+    let html = pageHead('租户账号管控', '查看租户下的所有账号，支持紧急重置租户超级管理员密码与账号启停') +
+      '<div class="help-note">' + icon('key', 15) + '<span><b>应急管控：</b>当租户侧超级管理员遗忘密码或账号异常时，平台可在此紧急重置租户管理员密码、禁用或启用租户账号。</span></div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0">' +
+      '<label style="font-size:13px;color:var(--text-2)">选择租户：</label>' +
+      '<select class="select" onchange="MT._acctTenant(this.value)">' +
+      TENANTS.map(x => '<option value="' + x.id + '" ' + (x.id === acctTenantId ? 'selected' : '') + '>' + esc(x.name) + '</option>').join('') +
+      '</select>' +
+      '<span style="font-size:12.5px;color:var(--text-3)">共 ' + accounts.length + ' 个账号</span>' +
+      '<div class="spacer"></div>' +
+      '<span class="badge badge-' + (t.status === '正常' ? 'success' : t.status === '已暂停' ? 'warning' : 'gray') + '" style="height:30px;border-radius:6px">' + icon('building', 13) + ' 租户状态：' + esc(t.status) + '</span>' +
+      '</div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th>账号</th><th>姓名</th><th>角色</th><th>状态</th><th>最后登录</th><th style="width:190px">操作</th>' +
+      '</tr></thead><tbody>';
+    if (!accounts.length) html += '<tr><td colspan="6"><div class="table-empty">' + icon('users', 40) + '<p>该租户暂无账号</p></div></td></tr>';
+    accounts.forEach(a => {
+      html += '<tr>' +
+        '<td><div class="cell-main">' + esc(a.account) + '</div></td>' +
+        '<td>' + esc(a.name) + '</td>' +
+        '<td><span class="badge-role">' + esc(a.role) + '</span></td>' +
+        '<td>' + statusBadge(a.status) + '</td>' +
+        '<td class="num">' + esc(a.lastLogin) + '</td>' +
+        '<td><div class="actions">' +
+        '<button class="link-btn" onclick="MT.resetTenantAccPwd(\'' + t.id + '\',\'' + a.account + '\')">重置密码</button>' +
+        (a.status === '正常' ? '<button class="link-btn gray" onclick="MT.toggleTenantAcc(\'' + t.id + '\',\'' + a.account + '\')">禁用</button>' : '<button class="link-btn" onclick="MT.toggleTenantAcc(\'' + t.id + '\',\'' + a.account + '\')">启用</button>') +
+        '</div></td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    $('#pg-tenant-accounts').innerHTML = html;
+  }
+  function _acctTenant(v) { acctTenantId = v; renderTenantAccounts(); }
+  function resetTenantAccPwd(tid, account) {
+    const t = TENANTS.find(x => x.id === tid);
+    const a = (TENANT_ACCOUNTS[tid] || []).find(x => x.account === account);
+    confirmBox({
+      title: '紧急重置租户密码', type: 'warning',
+      message: '为租户「' + t.name + '」的账号「' + a.name + '」重置密码？',
+      desc: '重置后该账号原密码立即失效，将生成新的随机初始密码',
+      confirmText: '确认重置',
+      onConfirm: function () {
+        const newPwd = 'Tenant@' + Math.random().toString(36).slice(2, 8);
+        addOpLog('租户权限管控', '紧急重置租户管理员密码「' + t.name + ' / ' + account + '」', '重置密码');
+        addLifecycleLog(t.name, '编辑', '紧急重置账号 ' + account + ' 的密码');
+        openDialog({
+          title: '重置完成 · ' + t.name, cls: 'narrow',
+          body: '<div class="danger-box"><div class="db-icon">' + icon('check', 20) + '</div><div><b>新初始密码已生成</b><p>请通过安全渠道（电话/邮件）告知租户「' + esc(t.name) + '」的联系人，账号首次登录后应立即修改。</p><div class="login-hint">新密码：' + newPwd + '</div></div></div>',
+          footer: '<button class="btn btn-primary" onclick="MT.closeDialogs()">我已记录，关闭</button>'
+        });
+      }
+    });
+  }
+  function toggleTenantAcc(tid, account) {
+    const t = TENANTS.find(x => x.id === tid);
+    const a = (TENANT_ACCOUNTS[tid] || []).find(x => x.account === account);
+    const toEnable = a.status !== '正常';
+    confirmBox({
+      title: toEnable ? '启用账号' : '禁用账号', type: toEnable ? 'info' : 'warning',
+      message: (toEnable ? '启用' : '禁用') + '租户「' + t.name + '」的账号「' + a.name + '」？',
+      desc: toEnable ? '启用后该账号可正常登录租户侧平台' : '禁用后该账号将无法登录租户侧平台',
+      confirmText: toEnable ? '确认启用' : '确认禁用',
+      onConfirm: function () {
+        a.status = toEnable ? '正常' : '已禁用';
+        addOpLog('租户权限管控', (toEnable ? '启用' : '禁用') + '租户账号「' + t.name + ' / ' + account + '」', '启用禁用');
+        toast('账号「' + a.name + '」已' + (toEnable ? '启用' : '禁用'));
+        renderTenantAccounts();
+      }
+    });
+  }
+
+  /* ============================================================
+     页面：租户功能开关（功能13）
+     ============================================================ */
+  let fsTenantId = 't01';
+  function renderFeatureSwitches() {
+    if (!TENANTS.some(x => x.id === fsTenantId)) fsTenantId = TENANTS[0].id;
+    const t = TENANTS.find(x => x.id === fsTenantId);
+    let html = pageHead('租户功能开关', '按租户维度精细化控制野保平台核心功能的使用权限') +
+      '<div class="help-note">' + icon('toggle', 15) + '<span>关闭某功能后，该租户侧对应菜单入口将立即隐藏，已产生的历史数据不受影响；开关变更将写入平台操作日志。</span></div>' +
+      '<div class="card"><div class="toolbar" style="padding:14px 16px 0">' +
+      '<label style="font-size:13px;color:var(--text-2)">选择租户：</label>' +
+      '<select class="select" onchange="MT._fsTenant(this.value)">' +
+      TENANTS.map(x => '<option value="' + x.id + '" ' + (x.id === fsTenantId ? 'selected' : '') + '>' + esc(x.name) + '</option>').join('') +
+      '</select>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：开关已实时生效并记录日志\',\'info\')">' + icon('info', 15) + '说明</button>' +
+      '</div>' +
+      '<div class="table-wrap"><table class="table feature-matrix"><thead><tr>' +
+      '<th style="width:230px">核心功能</th><th>功能说明</th><th style="width:120px">当前状态</th><th style="width:110px">操作</th>' +
+      '</tr></thead><tbody>';
+    FEATURE_DEFS.forEach(f => {
+      const on = t.features[f.key];
+      html += '<tr><td><div class="feature-name-cell"><span class="f-icon">' + icon(f.ic, 15) + '</span><div><b>' + esc(f.name) + '</b><span>' + esc(f.key.toUpperCase()) + '</span></div></div></td>' +
+        '<td style="color:var(--text-2)">' + esc(f.desc) + '</td>' +
+        '<td>' + (on ? badge('已开通', 'success') : badge('已关闭', 'gray')) + '</td>' +
+        '<td>' + switchWithHandler('fs-' + f.key, on, function (checked) {
+          t.features[f.key] = checked;
+          addOpLog('租户权限管控', (checked ? '开通' : '关闭') + '租户「' + t.name + '」的' + f.name + '功能', '编辑');
+          renderFeatureSwitches();
+          toast('已' + (checked ? '开通' : '关闭') + '「' + t.name + '」的' + f.name + '功能');
+        }) + '</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    $('#pg-feature-switches').innerHTML = html;
+  }
+  function _fsTenant(v) { fsTenantId = v; renderFeatureSwitches(); }
+
+  /* ============================================================
+     页面：日志审计（功能14-16）
+     ============================================================ */
+  let opLogKw = '', opLogType = '全部', opLogFrom = '', opLogTo = '';
+  let lifeLogKw = '', lifeLogAction = '全部';
+  let loginLogKw = '', loginLogStatus = '全部';
+
+  function logToolbar(key, placeholder, typeOptions, statusVal, statusHandler) {
+    return '<div class="card"><div class="toolbar" style="padding:14px 16px 0">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="' + placeholder + '" value="' + esc(key) + '" oninput="MT._logKw(this.value)"></div>' +
+      '<select class="select" onchange="MT._logType(this.value)">' + typeOptions.map(o => '<option ' + (o === statusVal ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<div class="date-range"><input type="date" id="log-from" value="' + (statusVal === 'log' ? logOpFrom : '') + '" onchange="MT._logFrom(this.value)"><span style="color:var(--text-3)">至</span><input type="date" id="log-to" value="' + (statusVal === 'log' ? logOpTo : '') + '" onchange="MT._logTo(this.value)"></div>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：已生成导出文件 日志导出.xlsx\',\'success\')">' + icon('bar', 15) + '导出</button>' +
+      '</div>';
+  }
+  function _logKw(v) {
+    if (currentPage === 'page-op-logs') { opLogKw = v; opLogPage = 1; renderOpLogs(); }
+    else if (currentPage === 'page-lifecycle-logs') { lifeLogKw = v; lifeLogPage = 1; renderLifecycleLogs(); }
+    else if (currentPage === 'page-login-logs') { loginLogKw = v; loginLogPage = 1; renderLoginLogs(); }
+  }
+  function _logType(v) {
+    if (currentPage === 'page-op-logs') { opLogType = v; opLogPage = 1; renderOpLogs(); }
+    else if (currentPage === 'page-lifecycle-logs') { lifeLogAction = v; lifeLogPage = 1; renderLifecycleLogs(); }
+    else if (currentPage === 'page-login-logs') { loginLogStatus = v; loginLogPage = 1; renderLoginLogs(); }
+  }
+  function _logFrom(v) { opLogFrom = v; opLogPage = 1; renderOpLogs(); }
+  function _logTo(v) { opLogTo = v; opLogPage = 1; renderOpLogs(); }
+  function inDateRange(timeStr, from, to) {
+    const d = timeStr.slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  }
+
+  function renderOpLogs(page) {
+    if (page) opLogPage = page;
+    let list = OP_LOGS.filter(l =>
+      (opLogType === '全部' || l.type === opLogType) &&
+      (!opLogKw || l.content.includes(opLogKw) || l.op.includes(opLogKw) || l.account.includes(opLogKw) || l.module.includes(opLogKw) || l.ip.includes(opLogKw)) &&
+      inDateRange(l.time, opLogFrom, opLogTo));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (opLogPage > pages) opLogPage = pages;
+    const rows = list.slice((opLogPage - 1) * PAGE_SIZE, opLogPage * PAGE_SIZE);
+    const typeBadge = { '新增': 'success', '编辑': 'info', '删除': 'danger', '启用禁用': 'warning', '暂停恢复': 'warning', '重置密码': 'warning', '续期': 'info', '导出': 'gray', '检索': 'gray' };
+    let html = pageHead('平台操作日志', '记录平台管理员的所有操作，支持检索查看（日志不可删除）') +
+      '<div class="log-toolbar">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="搜索操作人 / 内容 / IP" value="' + esc(opLogKw) + '" oninput="MT._logKw(this.value)"></div>' +
+      '<select class="select" onchange="MT._logType(this.value)">' + ['全部', '新增', '编辑', '删除', '启用禁用', '暂停恢复', '重置密码', '续期', '导出', '检索'].map(o => '<option ' + (o === opLogType ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<div class="date-range"><input type="date" value="' + opLogFrom + '" onchange="MT._logFrom(this.value)"><span style="color:var(--text-3)">至</span><input type="date" value="' + opLogTo + '" onchange="MT._logTo(this.value)"></div>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：已生成导出文件 平台操作日志.xlsx\',\'success\')">' + icon('bar', 15) + '导出</button>' +
+      '</div>' +
+      '<div class="card"><div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th style="width:150px">操作时间</th><th>操作人</th><th>操作模块</th><th>操作内容</th><th style="width:100px">操作类型</th><th style="width:110px">IP 地址</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="6"><div class="table-empty">' + icon('fileText', 40) + '<p>没有符合条件的日志记录</p></div></td></tr>';
+    rows.forEach(l => {
+      html += '<tr><td class="num">' + l.time + '</td>' +
+        '<td><div class="cell-main">' + esc(l.op) + '</div><div class="cell-sub">' + esc(l.account) + '</div></td>' +
+        '<td>' + esc(l.module) + '</td>' +
+        '<td class="log-content"><b>' + esc(l.content) + '</b></td>' +
+        '<td>' + badge(l.type, typeBadge[l.type] || 'gray') + '</td>' +
+        '<td class="num" style="font-family:var(--mono);font-size:12.5px">' + esc(l.ip) + '</td></tr>';
+    });
+    html += '</tbody></table></div>' + pagination(list.length, opLogPage, PAGE_SIZE, 'renderOpLogs') +
+      '<div class="undeletable-note">' + icon('lock', 13) + '安全审计要求：操作日志由系统自动记录，任何人无权修改或删除</div></div>';
+    $('#pg-op-logs').innerHTML = html;
+  }
+
+  function renderLifecycleLogs(page) {
+    if (page) lifeLogPage = page;
+    let list = LIFECYCLE_LOGS.filter(l =>
+      (lifeLogAction === '全部' || l.action === lifeLogAction) &&
+      (!lifeLogKw || l.tenant.includes(lifeLogKw) || l.detail.includes(lifeLogKw) || l.op.includes(lifeLogKw)));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (lifeLogPage > pages) lifeLogPage = pages;
+    const rows = list.slice((lifeLogPage - 1) * PAGE_SIZE, lifeLogPage * PAGE_SIZE);
+    const actionBadge = { '开通': 'success', '编辑': 'info', '暂停': 'warning', '恢复': 'info', '禁用': 'danger', '启用': 'success', '续期': 'info', '删除': 'danger', '自动禁用': 'gray' };
+    let html = pageHead('租户生命周期日志', '记录租户的开通、禁用、编辑、删除等所有状态变更操作，支持检索查看') +
+      '<div class="log-toolbar">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="搜索租户 / 操作人 / 内容" value="' + esc(lifeLogKw) + '" oninput="MT._logKw(this.value)"></div>' +
+      '<select class="select" onchange="MT._logType(this.value)">' + ['全部', '开通', '编辑', '暂停', '恢复', '禁用', '启用', '续期', '删除', '自动禁用'].map(o => '<option ' + (o === lifeLogAction ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：已生成导出文件 租户生命周期日志.xlsx\',\'success\')">' + icon('bar', 15) + '导出</button>' +
+      '</div>' +
+      '<div class="card"><div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th style="width:150px">操作时间</th><th>操作人</th><th style="width:100px">操作类型</th><th>涉及租户</th><th>操作详情</th><th style="width:110px">IP 地址</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="6"><div class="table-empty">' + icon('activity', 40) + '<p>没有符合条件的日志记录</p></div></td></tr>';
+    rows.forEach(l => {
+      html += '<tr><td class="num">' + l.time + '</td>' +
+        '<td><div class="cell-main">' + esc(l.op) + '</div><div class="cell-sub">' + esc(l.account) + '</div></td>' +
+        '<td>' + badge(l.action, actionBadge[l.action] || 'gray') + '</td>' +
+        '<td><b>' + esc(l.tenant) + '</b></td>' +
+        '<td class="log-content"><b>' + esc(l.detail) + '</b></td>' +
+        '<td class="num" style="font-family:var(--mono);font-size:12.5px">' + esc(l.ip) + '</td></tr>';
+    });
+    html += '</tbody></table></div>' + pagination(list.length, lifeLogPage, PAGE_SIZE, 'renderLifecycleLogs') + '</div>';
+    $('#pg-lifecycle-logs').innerHTML = html;
+  }
+
+  function renderLoginLogs(page) {
+    if (page) loginLogPage = page;
+    let list = LOGIN_LOGS.filter(l =>
+      (loginLogStatus === '全部' || l.status === loginLogStatus) &&
+      (!loginLogKw || l.account.includes(loginLogKw) || l.name.includes(loginLogKw) || l.ip.includes(loginLogKw)));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (loginLogPage > pages) loginLogPage = pages;
+    const rows = list.slice((loginLogPage - 1) * PAGE_SIZE, loginLogPage * PAGE_SIZE);
+    let html = pageHead('登录日志', '记录平台管理员的登录与退出行为，包含登录时间、IP 地址与登录状态') +
+      '<div class="log-toolbar">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="搜索账号 / 姓名 / IP" value="' + esc(loginLogKw) + '" oninput="MT._logKw(this.value)"></div>' +
+      '<select class="select" onchange="MT._logType(this.value)">' + ['全部', '成功', '失败', '退出'].map(o => '<option ' + (o === loginLogStatus ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：已生成导出文件 登录日志.xlsx\',\'success\')">' + icon('bar', 15) + '导出</button>' +
+      '</div>' +
+      '<div class="card"><div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th style="width:150px">登录时间</th><th>账号</th><th>姓名</th><th style="width:130px">IP 地址</th><th style="width:100px">登录状态</th><th>失败原因</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="6"><div class="table-empty">' + icon('key', 40) + '<p>没有符合条件的日志记录</p></div></td></tr>';
+    rows.forEach(l => {
+      html += '<tr><td class="num">' + l.time + '</td>' +
+        '<td style="font-family:var(--mono);font-size:12.5px">' + esc(l.account) + '</td>' +
+        '<td>' + esc(l.name) + '</td>' +
+        '<td class="num" style="font-family:var(--mono);font-size:12.5px">' + esc(l.ip) + '</td>' +
+        '<td>' + statusBadge(l.status) + '</td>' +
+        '<td style="color:var(--danger)">' + esc(l.reason || '—') + '</td></tr>';
+    });
+    html += '</tbody></table></div>' + pagination(list.length, loginLogPage, PAGE_SIZE, 'renderLoginLogs') + '</div>';
+    $('#pg-login-logs').innerHTML = html;
+  }
+
+  /* ============================================================
+     页面：消息通知（功能17-18）
+     ============================================================ */
+  function renderNotifRules() {
+    let html = pageHead('通知规则配置', '配置租户到期、服务暂停、配额超限等场景的通知规则，支持站内信/邮件通知租户联系人') +
+      '<div class="help-note">' + icon('bell', 15) + '<span>规则启用后，系统将按照触发条件自动向租户联系人发送站内信与邮件提醒，帮助租户及时处理续期与扩容事宜。</span></div>' +
+      '<div style="display:flex;justify-content:flex-end;margin-bottom:16px">' +
+      '<button class="btn btn-primary" onclick="MT.openRuleModal(null)">' + icon('plus', 15) + '新增规则</button></div>' +
+      '<div class="rule-grid">';
+    NOTIF_RULES.forEach(r => {
+      const chBadges = r.channels.map(c => c === '站内信' ? badge('站内信', 'info', false) : badge('邮件', 'success', false)).join(' ');
+      html += '<div class="card rule-card"><div class="rc-head">' +
+        '<div class="rc-title">' + icon('bell', 17) + esc(r.name) + '</div>' +
+        switchWithHandler('nr-' + r.id, r.status === '启用', function (checked) {
+          r.status = checked ? '启用' : '禁用';
+          addOpLog('消息通知', (checked ? '启用' : '禁用') + '通知规则「' + r.name + '」', '编辑');
+          renderNotifRules();
+          toast('规则「' + r.name + '」已' + (checked ? '启用' : '禁用'));
+        }) +
+        '</div>' +
+        '<p class="rc-desc">' + esc(r.desc) + '</p>' +
+        '<div class="rc-meta">' +
+        '<span>' + icon('zap', 13) + '触发条件：' + esc(r.trigger) + '</span>' +
+        '<span>' + icon('mail', 13) + '通知方式：' + chBadges + '</span>' +
+        '<span>' + icon('users', 13) + '接收对象：' + esc(r.target) + '</span>' +
+        '</div>' +
+        '<div class="rc-foot"><span style="font-size:12.5px;color:var(--text-3)">当前状态：' + (r.status === '启用' ? '<b style="color:var(--success)">启用中</b>' : '<b style="color:var(--text-3)">已停用</b>') + '</span>' +
+        '<div><button class="link-btn" onclick="MT.openRuleModal(\'' + r.id + '\')">编辑</button>' +
+        '<button class="link-btn danger" onclick="MT.delRule(\'' + r.id + '\')">删除</button></div></div></div>';
+    });
+    html += '</div>';
+    $('#pg-notif-rules').innerHTML = html;
+  }
+  function openRuleModal(ruleId) {
+    const isEdit = !!ruleId;
+    const r = isEdit ? NOTIF_RULES.find(x => x.id === ruleId) : null;
+    const chk = (val) => '<label class="pt-child" style="margin-right:14px"><input type="checkbox" value="' + val + '" class="rule-ch" ' + (r && r.channels.includes(val) ? 'checked' : '') + '>' + val + '</label>';
+    openDialog({
+      title: isEdit ? '编辑通知规则' : '新增通知规则',
+      body:
+        '<div class="field"><label>规则名称<span class="req">*</span></label><input class="input" id="rule-name" value="' + esc(r ? r.name : '') + '" placeholder="例如：租户到期提醒"><div class="err-msg">请输入规则名称</div></div>' +
+        '<div class="field-row">' +
+        '<div class="field"><label>触发条件<span class="req">*</span></label><select class="select" id="rule-trigger">' +
+        ['到期前 30 天', '到期前 7 天', '暂停 / 恢复时', '配额使用率达 80%', '配额使用率达 100%', '异地 / 新设备登录'].map(o => '<option ' + (r && r.trigger === o ? 'selected' : '') + '>' + o + '</option>').join('') + '</select></div>' +
+        '<div class="field"><label>接收对象</label><select class="select" id="rule-target">' + ['租户联系人', '租户管理员', '全部租户用户'].map(o => '<option ' + (r && r.target === o ? 'selected' : '') + '>' + o + '</option>').join('') + '</select></div></div>' +
+        '<div class="field" style="margin-bottom:0"><label>通知方式<span class="req">*</span>（可多选）</label>' +
+        '<div class="perm-tree"><div class="pt-title">' + icon('mail', 15) + '渠道选择</div><div class="pt-children" style="padding:6px 4px">' + chk('站内信') + chk('邮件') + '</div></div></div>',
+      footer:
+        '<button class="btn btn-default" onclick="MT.closeDialogs()">取消</button>' +
+        '<button class="btn btn-primary" onclick="MT.saveRule(\'' + (isEdit ? r.id : 'new') + '\')">' + (isEdit ? '保存修改' : '确认新增') + '</button>'
+    });
+  }
+  function saveRule(ruleId) {
+    const nameEl = $('#rule-name');
+    if (!nameEl.value.trim()) { nameEl.classList.add('err'); return; }
+    const chs = Array.prototype.filter.call($$('.rule-ch'), i => i.checked).map(i => i.value);
+    if (!chs.length) { toast('请至少选择一种通知方式', 'error'); return; }
+    if (ruleId === 'new') {
+      NOTIF_RULES.push({ id: uid('nr'), name: nameEl.value.trim(), desc: '自定义通知规则', trigger: $('#rule-trigger').value, channels: chs, target: $('#rule-target').value, status: '启用' });
+      addOpLog('消息通知', '新增通知规则「' + nameEl.value.trim() + '」', '新增');
+      toast('通知规则创建成功');
+    } else {
+      const r = NOTIF_RULES.find(x => x.id === ruleId);
+      r.name = nameEl.value.trim(); r.trigger = $('#rule-trigger').value; r.target = $('#rule-target').value; r.channels = chs;
+      addOpLog('消息通知', '编辑通知规则「' + r.name + '」', '编辑');
+      toast('通知规则已更新');
+    }
+    closeDialogs(); renderNotifRules();
+  }
+  function delRule(ruleId) {
+    const r = NOTIF_RULES.find(x => x.id === ruleId);
+    confirmBox({
+      title: '删除规则', type: 'danger',
+      message: '确定删除通知规则「' + r.name + '」？',
+      desc: '删除后该场景将不再自动发送通知',
+      confirmText: '确认删除',
+      onConfirm: function () {
+        NOTIF_RULES.splice(NOTIF_RULES.indexOf(r), 1);
+        addOpLog('消息通知', '删除通知规则「' + r.name + '」', '删除');
+        toast('规则「' + r.name + '」已删除');
+        renderNotifRules();
+      }
+    });
+  }
+
+  let notifRecKw = '', notifRecType = '全部', notifRecStatus = '全部';
+  function renderNotifRecords(page) {
+    if (page) notifRecPage = page;
+    let list = NOTIF_RECORDS.filter(n =>
+      (notifRecType === '全部' || n.type === notifRecType) &&
+      (notifRecStatus === '全部' || n.status === notifRecStatus) &&
+      (!notifRecKw || n.tenant.includes(notifRecKw) || n.contact.includes(notifRecKw) || n.content.includes(notifRecKw)));
+    const pages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+    if (notifRecPage > pages) notifRecPage = pages;
+    const rows = list.slice((notifRecPage - 1) * PAGE_SIZE, notifRecPage * PAGE_SIZE);
+    const chBadge = { '站内信': 'info', '邮件': 'success' };
+    const stBadge = { '已发送': 'success', '已读': 'gray', '未读': 'info', '失败': 'danger' };
+    let html = pageHead('通知记录', '查看所有通知的发送记录与接收状态') +
+      '<div class="log-toolbar">' +
+      '<div class="search-box">' + icon('search', 15) + '<input placeholder="搜索租户 / 联系人 / 内容" value="' + esc(notifRecKw) + '" oninput="MT._notifRecKw(this.value)"></div>' +
+      '<select class="select" onchange="MT._notifRecType(this.value)">' + ['全部'].concat(NOTIF_RULES.map(r => r.name)).map(o => '<option ' + (o === notifRecType ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<select class="select" onchange="MT._notifRecStatus(this.value)">' + ['全部', '已发送', '已读', '未读', '失败'].map(o => '<option ' + (o === notifRecStatus ? 'selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+      '<div class="spacer"></div>' +
+      '<button class="btn btn-default" onclick="MT.toast(\'演示环境：已生成导出文件 通知记录.xlsx\',\'success\')">' + icon('bar', 15) + '导出</button>' +
+      '</div>' +
+      '<div class="card"><div class="table-wrap"><table class="table"><thead><tr>' +
+      '<th style="width:150px">通知时间</th><th>通知类型</th><th>接收人</th><th style="width:90px">渠道</th><th>内容摘要</th><th style="width:90px">发送状态</th>' +
+      '</tr></thead><tbody>';
+    if (!rows.length) html += '<tr><td colspan="6"><div class="table-empty">' + icon('mail', 40) + '<p>没有符合条件的通知记录</p></div></td></tr>';
+    rows.forEach(n => {
+      html += '<tr><td class="num">' + n.time + '</td>' +
+        '<td>' + esc(n.type) + '</td>' +
+        '<td><div class="cell-main">' + esc(n.tenant) + '</div><div class="cell-sub">' + esc(n.contact) + '</div></td>' +
+        '<td>' + badge(n.channel, chBadge[n.channel] || 'gray', false) + '</td>' +
+        '<td class="log-content"><b>' + esc(n.content) + '</b></td>' +
+        '<td>' + badge(n.status, stBadge[n.status] || 'gray') + '</td></tr>';
+    });
+    html += '</tbody></table></div>' + pagination(list.length, notifRecPage, PAGE_SIZE, 'renderNotifRecords') + '</div>';
+    $('#pg-notif-records').innerHTML = html;
+  }
+  function _notifRecKw(v) { notifRecKw = v; notifRecPage = 1; renderNotifRecords(); }
+  function _notifRecType(v) { notifRecType = v; notifRecPage = 1; renderNotifRecords(); }
+  function _notifRecStatus(v) { notifRecStatus = v; notifRecPage = 1; renderNotifRecords(); }
+
+  /* ===================== 初始化 ===================== */
+  function init() {
+    $('#logo-icon').innerHTML = icon('paw', 20);
+    $('#logo-icon-lg').innerHTML = icon('paw', 24);
+    $('#lg-user-icon').innerHTML = icon('user', 16);
+    $('#lg-pass-icon').innerHTML = icon('lock', 16);
+    $('#login-eye').innerHTML = icon('eye', 16);
+    $('#ll-p1').innerHTML = icon('check', 17);
+    $('#ll-p2').innerHTML = icon('check', 17);
+    $('#ll-p3').innerHTML = icon('check', 17);
+    $('#login-form').addEventListener('submit', doLogin);
+    ['login-user', 'login-pass'].forEach(id => {
+      $('#' + id).addEventListener('input', function () {
+        const f = id === 'login-user' ? $('#lg-user-field') : $('#lg-pass-field');
+        f.classList.remove('has-err'); this.classList.remove('err');
+      });
+    });
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.topbar-right')) closeDropAll();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeDialogs(); closeDropAll(); }
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  /* ===================== 公开 API ===================== */
+  return {
+    icon: icon, esc: esc, toast: toast, closeDialogs: closeDialogs, confirmBox: confirmBox,
+    showPage: showPage, togglePwd: togglePwd, doLogin: doLogin, doLogout: doLogout,
+    toggleDrop: toggleDrop, closeDropAll: closeDropAll,
+    openChangePwd: function () { renderProfile(); showPage('page-profile'); },
+    runConfirm: runConfirm,
+    _swChange: _swChange, _swRegister: _swRegister,
+    /* 平台权限管理 */
+    renderAccounts: renderAccounts, renderRoles: renderRoles, renderPermissions: renderPermissions, renderProfile: renderProfile,
+    openAdminModal: openAdminModal, saveAdmin: saveAdmin, delAdmin: delAdmin, toggleAdmin: toggleAdmin, resetPwdModal: resetPwdModal, _accSearch: _accSearch,
+    openRoleModal: openRoleModal, saveRole: saveRole, delRole: delRole,
+    openRolePermModal: openRolePermModal, saveRolePerms: saveRolePerms, savePermAssign: savePermAssign, pickPermRole: pickPermRole,
+    savePwd: savePwd,
+    _permChildChange: _permChildChange, _permGroupChange: _permGroupChange,
+    /* 租户核心管理 */
+    renderTenants: renderTenants,
+    openTenantWizard: openTenantWizard, wizNext: wizNext, wizPrev: wizPrev, wizChip: wizChip, wizInput: wizInput, wizGenPwd: wizGenPwd, wizConfirm: wizConfirm,
+    openTenantEdit: openTenantEdit, saveTenantEdit: saveTenantEdit, openTenantDetail: openTenantDetail,
+    openTenantRenew: openTenantRenew, renewMode: renewMode, renewCustom: renewCustom, saveRenew: saveRenew,
+    togglePause: togglePause, toggleDisable: toggleDisable, delTenant: delTenant,
+    _tenantSearch: _tenantSearch, _tenantStatus: _tenantStatus,
+    _delCheck: _delCheck, _delInput: _delInput, _delTenantFinal: _delTenantFinal,
+    /* 租户权限管控 */
+    renderTemplates: renderTemplates, renderTenantAccounts: renderTenantAccounts, renderFeatureSwitches: renderFeatureSwitches,
+    openTemplateModal: openTemplateModal, saveTemplate: saveTemplate, delTemplate: delTemplate,
+    toggleTenantAcc: toggleTenantAcc, resetTenantAccPwd: resetTenantAccPwd, _acctTenant: _acctTenant, _fsTenant: _fsTenant,
+    /* 日志审计 */
+    renderOpLogs: renderOpLogs, renderLifecycleLogs: renderLifecycleLogs, renderLoginLogs: renderLoginLogs,
+    _logKw: _logKw, _logType: _logType, _logFrom: _logFrom, _logTo: _logTo,
+    /* 消息通知 */
+    renderNotifRules: renderNotifRules, renderNotifRecords: renderNotifRecords,
+    openRuleModal: openRuleModal, saveRule: saveRule, delRule: delRule,
+    _notifRecKw: _notifRecKw, _notifRecType: _notifRecType, _notifRecStatus: _notifRecStatus
+  };
+})();
+/*__JS_APPEND__*/
+</script>
+</body>
+</html>
