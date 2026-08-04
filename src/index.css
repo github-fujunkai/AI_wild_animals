@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #e8f0f2;
+  background: #0b141d;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background: #0b141d;
+}
+
+/* 外层带 sider 的 Layout 透明 */
+.ant-layout.ant-layout-has-sider {
+  background: transparent !important;
+}
+
+/* 侧边栏菜单字体稍大 */
+.ant-layout-sider .ant-menu-item,
+.ant-layout-sider .ant-menu-submenu-title {
+  font-size: 17px !important;
+}
+
+/* 侧边栏 - 半透明玻璃效果 */
+.ant-layout-sider {
+  background: rgba(10, 15, 24, 0.25) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* 侧边栏内部 flex 布局 */
+.ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保 Ant Layout 内部 flex 子节点可滚动 */
+.ant-layout .ant-layout {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 确保 Layout.Content 高度收缩并可滚动 */
+.ant-layout-content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+}
+
+.ant-menu-dark,
+.ant-menu-inline.ant-menu-root {
+  background: transparent !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: linear-gradient(135deg, rgba(45, 212, 168, 0.14), rgba(45, 212, 168, 0.08)) !important;
+  color: #2dd4a8 !important;
+}
+
+.ant-card {
+  background: rgba(20, 32, 45, 0.5) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.ant-card:hover {
+  background: rgba(20, 32, 45, 0.65) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* 树形自身透明，由外层 SectionCard 提供毛玻璃效果 */
+.ant-tree {
+  background: transparent !important;
+}
+
+/* 表格自身透明，由外层 SectionCard 提供毛玻璃效果 */
+.ant-table {
+  background: transparent !important;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: transparent !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  background: transparent !important;
+}
+
+/* 固定列需要明确的背景色才能遮挡滚动内容 */
+.ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell-fix-right,
+.ant-table-wrapper .ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background: transparent !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ant-card .ant-card-body,
+.ant-table-wrapper .ant-table-container,
+.ant-drawer .ant-drawer-content,
+.ant-tabs-content-holder {
+  background: transparent !important;
+}
+
+.ant-input::placeholder,
+.ant-input-affix-wrapper input::placeholder,
+.ant-select-selection-placeholder {
+  color: #6f8699 !important;
+}
+
+.ant-modal .ant-modal-title,
+.ant-modal .ant-modal-close,
+.ant-modal .ant-form-item .ant-form-item-label > label {
+  color: #e8f0f2 !important;
+}
+
+.ant-form-item .ant-form-item-label > label,
+.ant-table-wrapper .ant-table-thead > tr > th,
+.ant-tabs-tab,
+.ant-tree-title,
+.ant-statistic .ant-statistic-content {
+  color: #dbe7ee !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td,
+.ant-card,
+.ant-typography,
+.ant-tree {
+  color: #94a8b8 !important;
+}
+
+/* 表格标题不换行 */
+.ant-table-wrapper .ant-table-thead > tr > th {
+  white-space: nowrap !important;
+}
+
+/* 详情信息卡片暗色主题 */
+.detail-info-card,
+.detail-info-card .ant-card-body {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Descriptions 暗色主题 */
+.ant-descriptions .ant-descriptions-row > td,
+.ant-descriptions .ant-descriptions-row > th {
+  background: transparent !important;
+}
+
+.ant-descriptions .ant-descriptions-item-label {
+  color: #94a8b8 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.ant-descriptions .ant-descriptions-item-content {
+  color: #e8f0f2 !important;
+  background: transparent !important;
+}
+
+/* Drawer 内容区暗色 */
+.ant-drawer .ant-drawer-body {
+  background: rgba(15, 25, 36, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 暗色主题滚动条 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 地图上的 Select 下拉弹窗层级 */
+.map-select-dropdown {
+  z-index: 10000 !important;
+}
+
+/* 确保 Dropdown/Modal 等弹出层在地图之上 */
+.ant-dropdown,
+.ant-dropdown-menu,
+.ant-modal-root .ant-modal-wrap,
+.ant-select-dropdown {
+  z-index: 10001 !important;
+}
+
+/* ========== 设备配置表单 - 卡片式布局样式 ========== */
+
+/* Collapse 面板 */
+.config-collapse .ant-collapse-item {
+  margin-bottom: 8px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  overflow: hidden;
+}
+.config-collapse .ant-collapse-header {
+  padding: 10px 16px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  align-items: center !important;
+}
+.config-collapse .ant-collapse-content {
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: transparent !important;
+}
+.config-collapse .ant-collapse-content-box {
+  padding: 8px 12px 12px !important;
+}
+
+/* 分类标题 - 蓝色左边条 */
+.category-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1677ff;
+  padding: 6px 10px;
+  margin: 8px 0 6px;
+  background: rgba(22, 119, 255, 0.06);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.category-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 13px;
+  background: #1677ff;
+  border-radius: 2px;
+}
+
+/* 参数网格 - 3列 */
+.param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+}
+
+/* 参数卡片 - 左右布局 */
+.param-card {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+  min-height: 54px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.param-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* 左侧标签区 */
+.param-label {
+  flex: 0 0 140px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+}
+.param-desc {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8f0f2;
+  line-height: 1.35;
+  word-break: break-all;
+}
+.param-key {
+  font-size: 12px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 右侧值区 */
+.param-value-area {
+  flex: 1;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.param-value-area .input-wrap {
+  flex: 1;
+  min-width: 0;
+}
+.param-input,
+.param-select {
+  width: 100% !important;
+}
+.param-input .ant-input,
+.param-select .ant-select-selector {
+  font-size: 14px !important;
+}
+
+/* 默认值标签 */
+.default-badge {
+  font-size: 11px !important;
+  white-space: nowrap;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  flex-shrink: 0;
+  line-height: 1.4 !important;
+}
+
+/* 响应式 */
+@media (max-width: 1100px) {
+  .param-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .param-label {
+    flex-basis: 120px;
+  }
+}
+@media (max-width: 720px) {
+  .param-grid {
+    grid-template-columns: 1fr;
+  }
+  .param-label {
+    flex-basis: 110px;
+  }
+}
