@@ -10,6 +10,7 @@ import ImageDataPage from '@/pages/image/ImageDataPage'
 import ImagePage from '@/pages/image/ImagePage'
 import LoginPage from '@/pages/login/LoginPage'
 import OrgsPage from '@/pages/orgs/OrgsPage'
+import PatrolOrdersPage from '@/pages/patrol/PatrolOrdersPage'
 import SpeciesAnalysisPage from '@/pages/species/SpeciesAnalysisPage'
 import SystemPage from '@/pages/system/SystemPage'
 import { useAuthStore } from '@/store/auth-store'
@@ -87,6 +88,7 @@ export function AppRouter() {
           <Route path="/devices" element={<RequirePermission permission="devices:view"><DevicesPage /></RequirePermission>} />
           <Route path="/species" element={<RequirePermission permission="species:view"><SpeciesAnalysisPage /></RequirePermission>} />
           <Route path="/agent" element={<RequirePermission permission="agent:view"><EcoAgentPage /></RequirePermission>} />
+          <Route path="/patrol" element={<RequirePermission permission="patrol:view"><PatrolOrdersPage /></RequirePermission>} />
           <Route path="/system" element={<RequirePermission permission="users:view"><SystemPage /></RequirePermission>} />
           <Route path="/orgs" element={<RequirePermission permission="orgs:view"><OrgsPage /></RequirePermission>} />
           <Route path="/ops" element={<RequirePermission permission="ops:view"><DeviceOpsPage /></RequirePermission>} />

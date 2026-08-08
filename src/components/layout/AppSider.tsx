@@ -26,6 +26,7 @@ const items = [
   { key: '/devices', icon: <CameraOutlined />, label: '设备管理', permission: 'devices:view', module: '设备管理' },
   { key: '/species', icon: <RobotOutlined />, label: 'AI物种分析', permission: 'species:view', module: 'AI物种分析' },
   { key: '/agent', icon: <MessageOutlined />, label: '生态AI助手', permission: 'agent:view', module: '生态AI助手' },
+  { key: '/patrol', icon: <ApartmentOutlined />, label: '巡护工单', permission: 'patrol:view', module: '巡护工单' },
   { key: '/ops', icon: <ToolOutlined />, label: '设备运维中心', permission: 'ops:view', module: '设备运维中心' },
   { key: '/env', icon: <EnvironmentOutlined />, label: '环境监测', permission: 'env:view', module: '环境监测' },
   { key: '/system', icon: <SettingOutlined />, label: '用户管理', permission: 'users:view', module: '用户管理' },

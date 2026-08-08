@@ -18,6 +18,7 @@ import { Avatar, Badge, Button, Collapse, Empty, Input, Spin, Table, Tag, Toolti
 import type { CollapseProps } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { agentApi } from '@/services/api'
 import type { AgentDataSource, AgentRecognitionEngine, AgentReply, AgentReplyBlock, AgentSession, AgentToolCall, AgentWorkOrder } from '@/services/api'
@@ -308,7 +309,9 @@ function AdviceBlock({ block }: { block: Extract<AgentReplyBlock, { type: 'advic
       </ul>
       {order ? (
         <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-1.5 text-[11px] text-emerald-300">
-          ✓ 已生成巡护工单 <b>{order.id}</b>（待处理），请前往「巡护工单」模块派发执行。
+          ✓ 已生成巡护工单 <b>{order.id}</b>（待处理），请前往
+          <Link to="/patrol" className="mx-1 underline decoration-emerald-400/60 underline-offset-2 hover:text-emerald-200">巡护工单</Link>
+          模块派发执行。
         </div>
       ) : (
         <Button size="small" type="primary" ghost loading={confirming} className="mt-2" onClick={handleConfirm}>

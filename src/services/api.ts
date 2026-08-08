@@ -212,6 +212,9 @@ export type AgentWorkOrder = {
   title: string
   createdAt: string
   status: 'pending' | 'processing' | 'done'
+  assignee?: string
+  remark?: string
+  images?: string[]
 }
 
 export type AgentReply = {
@@ -319,6 +322,35 @@ const db = {
   speciesImages: mockSpeciesImages,
   deviceConfigs: mockDeviceConfigs,
 }
+
+// 巡护工单库（内存 mock，由 createWorkOrder 写入、getWorkOrders 读取）
+const mockWorkOrders: AgentWorkOrder[] = [
+  {
+    id: 'WO-000001',
+    title: '华北监测站A区域入侵告警巡护',
+    createdAt: '2024-01-16 10:30',
+    status: 'pending',
+    assignee: '张巡护',
+    remark: '连续 3 起入侵告警，需重点排查',
+  },
+  {
+    id: 'WO-000002',
+    title: '相机-002 低电量更换电池',
+    createdAt: '2024-01-15 15:02',
+    status: 'processing',
+    assignee: '李巡护',
+    remark: '电量 15%，尽快更换并检查太阳能板',
+  },
+  {
+    id: 'WO-000003',
+    title: '相机-003 固件升级至 V2.2.0',
+    createdAt: '2024-01-12 09:18',
+    status: 'done',
+    assignee: '王运维',
+    remark: '升级后需验证识别准确率',
+  },
+]
+
 
 // ─── Version API ────────────────────────────────────────────────────────────
 
@@ -1448,6 +1480,8 @@ export const agentApi = {
     title: string
     suggestions: string[]
     priority?: string
+    assignee?: string
+    remark?: string
   }): Promise<AgentWorkOrder> {
     const id = `WO-${Date.now().toString().slice(-6)}`
     const order: AgentWorkOrder = {
@@ -1455,10 +1489,74 @@ export const agentApi = {
       title: params.title,
       createdAt: new Date().toLocaleString('zh-CN'),
       status: 'pending',
+      assignee: params.assignee,
+      remark: params.remark ?? (params.suggestions?.length ? params.suggestions.join('；') : undefined),
     }
     // 模拟写入后端工单库
-    void params
+    mockWorkOrders.unshift(order)
     return delay(order, 700)
+  },
+
+  // 人工直接创建工单（人驱动通道）
+  async createWorkOrderManual(params: {
+    title: string
+    status?: AgentWorkOrder['status']
+    assignee?: string
+    remark?: string
+    images?: string[]
+  }): Promise<AgentWorkOrder> {
+    const id = `WO-${Date.now().toString().slice(-6)}`
+    const order: AgentWorkOrder = {
+      id,
+      title: params.title,
+      createdAt: new Date().toLocaleString('zh-CN'),
+      status: params.status ?? 'pending',
+      assignee: params.assignee,
+      remark: params.remark,
+      images: params.images,
+    }
+    mockWorkOrders.unshift(order)
+    return delay(order, 600)
+  },
+
+  // 分页查询巡护工单列表
+  async getWorkOrders(params?: { page?: number; pageSize?: number }): Promise<PageResponse<AgentWorkOrder>> {
+    const page = params?.page ?? 1
+    const pageSize = params?.pageSize ?? 10
+    return delay(paginate(mockWorkOrders, page, pageSize))
+  },
+
+  // 人工更新工单状态
+  async updateWorkOrderStatus(id: string, status: AgentWorkOrder['status']): Promise<AgentWorkOrder> {
+    const order = mockWorkOrders.find((o) => o.id === id)
+    if (!order) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    order.status = status
+    return delay({ ...order }, 400)
+  },
+
+  // 编辑工单（标题/派发人/备注/图片）
+  async updateWorkOrder(id: string, payload: { title?: string; assignee?: string; remark?: string; images?: string[] }): Promise<AgentWorkOrder> {
+    const order = mockWorkOrders.find((o) => o.id === id)
+    if (!order) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    if (payload.title !== undefined) order.title = payload.title
+    if (payload.assignee !== undefined) order.assignee = payload.assignee
+    if (payload.remark !== undefined) order.remark = payload.remark
+    if (payload.images !== undefined) order.images = payload.images
+    return delay({ ...order }, 400)
+  },
+
+  // 删除工单
+  async deleteWorkOrder(id: string): Promise<{ message: string }> {
+    const idx = mockWorkOrders.findIndex((o) => o.id === id)
+    if (idx < 0) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    mockWorkOrders.splice(idx, 1)
+    return delay({ message: '删除成功' })
   },
 
   async generateReport(params?: { period?: string }): Promise<AgentReply> {
