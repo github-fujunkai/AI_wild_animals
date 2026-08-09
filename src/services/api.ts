@@ -1241,8 +1241,18 @@ function generateReply(message: string, image?: string): AgentReply {
     }
   }
 
-  // 趋势分析
-  if (msg.includes('趋势') || msg.includes('分析')) {
+  // 趋势分析（宽泛意图，放在具体意图之后匹配，避免吞掉告警/设备/物种等更精确的查询）
+  if (
+    (msg.includes('趋势') || msg.includes('分析')) &&
+    !msg.includes('告警') &&
+    !msg.includes('预警') &&
+    !msg.includes('入侵') &&
+    !msg.includes('设备') &&
+    !msg.includes('电量') &&
+    !msg.includes('物种') &&
+    !msg.includes('报告') &&
+    !msg.includes('生成')
+  ) {
     return {
       blocks: [
         { type: 'text', content: '基于近7天的监测数据，为您分析生态监测趋势。整体抓拍量呈上升趋势，野生动物活动频率增加，告警事件有所下降。' },
@@ -1395,14 +1405,14 @@ function generateReply(message: string, image?: string): AgentReply {
   if (msg.includes('设备') || msg.includes('电量') || msg.includes('在线') || msg.includes('状态')) {
     return {
       blocks: [
-        { type: 'text', content: '当前共部署5台红外相机，其中在线3台、告警1台、离线1台、低电量1台。设备整体在线率60%，需关注低电量和离线设备。' },
+        { type: 'text', content: '当前共部署5台红外相机，其中在线2台、离线1台、低电量2台。设备整体在线率40%，需重点关注低电量和离线设备。' },
         {
           type: 'stats',
           items: [
-            { label: '在线设备', value: 3, trend: '持平', trendDir: 'up' },
+            { label: '在线设备', value: 2, trend: '1台', trendDir: 'down' },
             { label: '离线设备', value: 1, trend: '1台', trendDir: 'down' },
-            { label: '低电量', value: 2, trend: '1台', trendDir: 'down' },
-            { label: '在线率', value: '60%', trend: '8%', trendDir: 'down' },
+            { label: '低电量', value: 2, trend: '持平', trendDir: 'down' },
+            { label: '在线率', value: '40%', trend: '20%', trendDir: 'down' },
           ],
         },
         {
