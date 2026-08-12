@@ -624,7 +624,7 @@ export const userPasswords: Record<string, string> = {
   lisi: '123456',
 }
 
-// ─── AI Agent mock 数据 ─────────────────────────────────────────────────────
+// ─── AI 助手 mock 数据 ─────────────────────────────────────────────────────
 
 export const agentDataSources = [
   { name: '物种知识库', status: 'ready', count: 156, updatedAt: '2024-01-15 08:00', desc: '含国家一/二级保护动物分类学信息' },
@@ -632,8 +632,17 @@ export const agentDataSources = [
   { name: '环境监测数据', status: 'ready', count: 856, updatedAt: '2024-01-16 09:00', desc: '气象、月相、地形等环境因子' },
   { name: '设备运行数据', status: 'ready', count: 5, updatedAt: '2024-01-16 12:30', desc: '设备电量、在线状态、固件版本' },
   { name: '告警记录库', status: 'indexing', count: 28, updatedAt: '2024-01-16 11:00', desc: '入侵告警、电量告警、设备离线' },
-  { name: 'AI识别模型', status: 'ready', count: 42, updatedAt: '2024-01-10 10:00', desc: '动物/人类/车辆识别模型 v3.2' },
 ]
+
+// AI 识别引擎（CV 推理引擎，与 RAG 知识库数据源区分，非知识库）
+export const agentRecognitionEngine = {
+  name: 'AI 识别引擎',
+  modelVersion: 'v3.2',
+  status: 'ready',
+  accuracy: 93.4,
+  updatedAt: '2024-01-10 10:00',
+  desc: '动物/人类/车辆红外影像识别模型，支持物种识别与置信度输出',
+}
 
 export const agentQuickQuestions = [
   '近期野生动物物种分布情况如何？',

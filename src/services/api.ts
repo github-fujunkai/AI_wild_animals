@@ -5,6 +5,7 @@
 import {
   agentDataSources as mockAgentDataSources,
   agentQuickQuestions as mockAgentQuickQuestions,
+  agentRecognitionEngine as mockAgentRecognitionEngine,
   agentSessions as mockAgentSessions,
   alerts as mockAlerts,
   dailySummary as mockDailySummary,
@@ -184,7 +185,7 @@ export type SpeciesCatalogItem = {
   createdAt: string
 }
 
-// ─── AI Agent 类型 ──────────────────────────────────────────────────────────
+// ─── AI 助手 类型 ──────────────────────────────────────────────────────────
 
 export type AgentReplyBlock =
   | { type: 'text'; content: string }
@@ -192,10 +193,37 @@ export type AgentReplyBlock =
   | { type: 'table'; title?: string; columns: { title: string; dataIndex: string }[]; rows: Record<string, string | number>[] }
   | { type: 'chart'; chartType: 'line' | 'bar' | 'pie'; title: string; option: Record<string, unknown> }
   | { type: 'report'; title: string; period: string; sections: { heading: string; content: string }[] }
+  | { type: 'advice'; title: string; content: string; suggestions: string[] }
+
+// 受控 Agent 可调用的只读工具（禁止写操作，工单需人工确认后创建）
+export type AgentToolName = 'query_monitor_data' | 'query_alerts' | 'query_sites'
+
+export type AgentToolCall = {
+  id: string
+  tool: AgentToolName
+  name: string
+  params: string
+  status: 'running' | 'success' | 'error'
+  result: string
+}
+
+export type AgentWorkOrder = {
+  id: string
+  title: string
+  createdAt: string
+  status: 'pending' | 'processing' | 'done'
+  assignee?: string
+  remark?: string
+  images?: string[]
+}
 
 export type AgentReply = {
   blocks: AgentReplyBlock[]
   references?: { source: string; snippet: string }[]
+  agent?: {
+    reasoning: string[]
+    toolCalls: AgentToolCall[]
+  }
   duration?: number
 }
 
@@ -203,6 +231,15 @@ export type AgentDataSource = {
   name: string
   status: 'ready' | 'indexing' | 'error'
   count: number
+  updatedAt: string
+  desc: string
+}
+
+export type AgentRecognitionEngine = {
+  name: string
+  modelVersion: string
+  status: 'ready' | 'indexing' | 'error'
+  accuracy: number
   updatedAt: string
   desc: string
 }
@@ -285,6 +322,35 @@ const db = {
   speciesImages: mockSpeciesImages,
   deviceConfigs: mockDeviceConfigs,
 }
+
+// 巡护工单库（内存 mock，由 createWorkOrder 写入、getWorkOrders 读取）
+const mockWorkOrders: AgentWorkOrder[] = [
+  {
+    id: 'WO-000001',
+    title: '华北监测站A区域入侵告警巡护',
+    createdAt: '2024-01-16 10:30',
+    status: 'pending',
+    assignee: '张巡护',
+    remark: '连续 3 起入侵告警，需重点排查',
+  },
+  {
+    id: 'WO-000002',
+    title: '相机-002 低电量更换电池',
+    createdAt: '2024-01-15 15:02',
+    status: 'processing',
+    assignee: '李巡护',
+    remark: '电量 15%，尽快更换并检查太阳能板',
+  },
+  {
+    id: 'WO-000003',
+    title: '相机-003 固件升级至 V2.2.0',
+    createdAt: '2024-01-12 09:18',
+    status: 'done',
+    assignee: '王运维',
+    remark: '升级后需验证识别准确率',
+  },
+]
+
 
 // ─── Version API ────────────────────────────────────────────────────────────
 
@@ -1050,8 +1116,94 @@ export const dataApi = {
 
 // ─── Agent API ──────────────────────────────────────────────────────────────
 
-function generateReply(message: string): AgentReply {
+// 受控 Agent 执行管线：仅调用只读查询工具，不自动创建工单
+function buildAgentFlow(message: string): { reasoning: string[]; toolCalls: AgentToolCall[] } {
   const msg = message.toLowerCase()
+  const reasoning = [
+    '理解用户意图：将自然语言问题解析为可执行的检索任务',
+    '制定执行计划：按领域选择需要调用的只读查询工具',
+    '依次调用工具：校验返回数据的完整性与有效性',
+    '综合多源结果：组织为结构化回答，仅输出只读分析',
+  ]
+  const toolCalls: AgentToolCall[] = []
+  let n = 0
+  const push = (tc: Omit<AgentToolCall, 'id' | 'status'>) =>
+    toolCalls.push({ ...tc, id: `call-${++n}`, status: 'success' })
+
+  if (msg.includes('告警') || msg.includes('预警') || msg.includes('入侵')) {
+    push({
+      tool: 'query_alerts',
+      name: '查询告警',
+      params: '近7天 · 全部站点',
+      result: '7 起告警（入侵3/电量2/离线1/存储1），华北A占比43%',
+    })
+  }
+  if (msg.includes('设备') || msg.includes('电量') || msg.includes('在线')) {
+    push({
+      tool: 'query_monitor_data',
+      name: '查询监测数据',
+      params: '设备运行状态 · 全部相机',
+      result: '5台设备：在线3台、离线1台、低电量2台，在线率60%',
+    })
+  }
+  if (msg.includes('物种') || msg.includes('分布') || msg.includes('点位') || msg.includes('区域') || msg.includes('站点')) {
+    push({
+      tool: 'query_sites',
+      name: '查询点位信息',
+      params: '全部监测点位',
+      result: '5个点位：华北A/B、华南C/D、西北E',
+    })
+  }
+  if (toolCalls.length === 0 || msg.includes('趋势') || msg.includes('分析') || msg.includes('报告')) {
+    push({
+      tool: 'query_monitor_data',
+      name: '查询监测数据',
+      params: '近7天 · 全部相机',
+      result: '抓拍429次，识别野生动物12种，较上周+12.5%',
+    })
+  }
+  return { reasoning, toolCalls }
+}
+
+// 巡护建议块：AI 只给建议，不自动建工单，由人工确认后执行
+function buildAdvice(): Extract<AgentReplyBlock, { type: 'advice' }> {
+  return {
+    type: 'advice',
+    title: '巡护建议（需人工确认后执行）',
+    content:
+      '基于告警与设备状态分析，AI 已生成以下巡护建议。系统不会自动创建工单，请您核对无误后手动确认执行。',
+    suggestions: [
+      '加强华北监测站A区域巡护频次（本周入侵告警 3 起）',
+      '为相机-002（电量15%）、相机-005（电量12%）更换电池',
+      '检查相机-003 网络连接与供电，恢复在线后升级固件至 V2.2.0',
+    ],
+  }
+}
+
+function generateReply(message: string, image?: string): AgentReply {
+  const msg = message.toLowerCase()
+
+  // 疑难图片研判（红外影像 + VLM + RAG 物种知识库辅助研判）
+  if (image) {
+    return {
+      blocks: [
+        { type: 'text', content: '已收到您的红外影像。结合 VLM 视觉识别与 RAG 物种知识库进行辅助研判：\n\n• 主体类别：疑似小型哺乳动物，体态接近『赤狐』（置信度 61%），存在一定相似度\n• 关键特征：体型偏小、耳部轮廓清晰、尾长特征符合犬科\n• 知识库对照：与物种知识库中赤狐（Vulpes vulpes）的常见红外形态存在部分吻合，但夜间红外图像特征易受角度、距离影响\n\n⚠️ 该结果由 AI 自动研判，仅供业务参考，最终物种判定需由专业人员对原始影像人工复核确认。' },
+        {
+          type: 'stats',
+          items: [
+            { label: '疑似物种', value: '赤狐' },
+            { label: '识别置信度', value: '61%' },
+            { label: '知识库匹配度', value: '中等' },
+            { label: '研判状态', value: '待人工复核' },
+          ],
+        },
+      ],
+      references: [
+        { source: '物种知识库', snippet: '赤狐（Vulpes vulpes）形态特征与红外识别要点' },
+        { source: '历史监测数据', snippet: '近30天该点位共出现 3 次赤狐抓拍记录' },
+      ],
+    }
+  }
 
   // 报告生成
   if (msg.includes('报告') || msg.includes('生成')) {
@@ -1085,11 +1237,22 @@ function generateReply(message: string): AgentReply {
         { source: '告警记录库', snippet: '本月告警 28 起，入侵告警占比 35.7%' },
         { source: '环境监测数据', snippet: '满月期间夜间抓拍量增加 35%' },
       ],
+      agent: buildAgentFlow(message),
     }
   }
 
-  // 趋势分析
-  if (msg.includes('趋势') || msg.includes('分析')) {
+  // 趋势分析（宽泛意图，放在具体意图之后匹配，避免吞掉告警/设备/物种等更精确的查询）
+  if (
+    (msg.includes('趋势') || msg.includes('分析')) &&
+    !msg.includes('告警') &&
+    !msg.includes('预警') &&
+    !msg.includes('入侵') &&
+    !msg.includes('设备') &&
+    !msg.includes('电量') &&
+    !msg.includes('物种') &&
+    !msg.includes('报告') &&
+    !msg.includes('生成')
+  ) {
     return {
       blocks: [
         { type: 'text', content: '基于近7天的监测数据，为您分析生态监测趋势。整体抓拍量呈上升趋势，野生动物活动频率增加，告警事件有所下降。' },
@@ -1124,6 +1287,7 @@ function generateReply(message: string): AgentReply {
         { source: '历史监测数据', snippet: '2024-01-10 至 2024-01-16 共抓拍 429 条' },
         { source: '环境监测数据', snippet: '1月15日温度 15°C，为本周最高' },
       ],
+      agent: buildAgentFlow(message),
     }
   }
 
@@ -1131,7 +1295,7 @@ function generateReply(message: string): AgentReply {
   if (msg.includes('物种') || msg.includes('分布') || msg.includes('鹿') || msg.includes('野猪') || msg.includes('动物')) {
     return {
       blocks: [
-        { type: 'text', content: '根据历史监测数据与AI识别模型分析，近期监测到的野生动物主要包括梅花鹿、野猪、赤狐、野兔等，物种分布如下：' },
+        { type: 'text', content: '根据历史监测数据与 AI 识别引擎分析，近期监测到的野生动物主要包括梅花鹿、野猪、赤狐、野兔等，物种分布如下：' },
         {
           type: 'chart',
           chartType: 'pie',
@@ -1177,8 +1341,9 @@ function generateReply(message: string): AgentReply {
       references: [
         { source: '物种知识库 v3.2', snippet: '梅花鹿（Cervus nippon），国家一级保护动物，晨昏活动' },
         { source: '历史监测数据', snippet: '梅花鹿抓拍 128 次，占比 33.7%' },
-        { source: 'AI识别模型', snippet: '平均识别置信度 93.4%' },
+        { source: 'AI 识别引擎', snippet: '平均识别置信度 93.4%' },
       ],
+      agent: buildAgentFlow(message),
     }
   }
 
@@ -1226,7 +1391,9 @@ function generateReply(message: string): AgentReply {
           ],
         },
         { type: 'text', content: '⚠️ 风险提示：华北监测站A区域本周发生3起入侵告警，占比43%，建议加强该区域巡护频次，并检查相机-003的网络连接状态。相机-002电量仅剩15%，需尽快更换电池。' },
+        buildAdvice(),
       ],
+      agent: buildAgentFlow(message),
       references: [
         { source: '告警记录库', snippet: '本周告警 7 起，入侵告警 3 起' },
         { source: '设备运行数据', snippet: '相机-002 电量 15%，相机-003 离线' },
@@ -1238,14 +1405,14 @@ function generateReply(message: string): AgentReply {
   if (msg.includes('设备') || msg.includes('电量') || msg.includes('在线') || msg.includes('状态')) {
     return {
       blocks: [
-        { type: 'text', content: '当前共部署5台红外相机，其中在线3台、告警1台、离线1台、低电量1台。设备整体在线率60%，需关注低电量和离线设备。' },
+        { type: 'text', content: '当前共部署5台红外相机，其中在线2台、离线1台、低电量2台。设备整体在线率40%，需重点关注低电量和离线设备。' },
         {
           type: 'stats',
           items: [
-            { label: '在线设备', value: 3, trend: '持平', trendDir: 'up' },
+            { label: '在线设备', value: 2, trend: '1台', trendDir: 'down' },
             { label: '离线设备', value: 1, trend: '1台', trendDir: 'down' },
-            { label: '低电量', value: 2, trend: '1台', trendDir: 'down' },
-            { label: '在线率', value: '60%', trend: '8%', trendDir: 'down' },
+            { label: '低电量', value: 2, trend: '持平', trendDir: 'down' },
+            { label: '在线率', value: '40%', trend: '20%', trendDir: 'down' },
           ],
         },
         {
@@ -1271,6 +1438,7 @@ function generateReply(message: string): AgentReply {
       references: [
         { source: '设备运行数据', snippet: '5台设备，在线3台，低电量2台' },
       ],
+      agent: buildAgentFlow(message),
     }
   }
 
@@ -1290,19 +1458,23 @@ function generateReply(message: string): AgentReply {
       { type: 'text', content: '💡 我可以帮您：\n• 分析物种分布与活动规律（如"近期物种分布情况"）\n• 生成生态监测趋势分析（如"分析最近一周数据趋势"）\n• 自动生成监测报告（如"生成本月监测报告"）\n• 告警事件分析（如"哪些区域告警频率最高"）\n• 设备运行状态诊断（如"设备电量情况"）' },
     ],
     references: [
-      { source: '系统提示', snippet: 'AI Agent 已就绪，支持自然语言查询与报告生成' },
+      { source: '系统提示', snippet: 'AI 助手 已就绪，支持自然语言查询与报告生成' },
     ],
   }
 }
 
 export const agentApi = {
-  async sendMessage(message: string): Promise<AgentReply> {
-    const reply = generateReply(message)
+  async sendMessage(message: string, image?: string): Promise<AgentReply> {
+    const reply = generateReply(message, image)
     return delay(reply, 900 + Math.random() * 600)
   },
 
   async getDataSources(): Promise<AgentDataSource[]> {
     return delay(mockAgentDataSources as AgentDataSource[])
+  },
+
+  async getRecognitionEngine(): Promise<AgentRecognitionEngine> {
+    return delay(mockAgentRecognitionEngine as AgentRecognitionEngine)
   },
 
   async getQuickQuestions(): Promise<string[]> {
@@ -1311,6 +1483,90 @@ export const agentApi = {
 
   async getSessions(): Promise<AgentSession[]> {
     return delay(mockAgentSessions as AgentSession[])
+  },
+
+  // 受控 Agent：工单必须由人工确认后调用创建接口，AI 不会自动触发
+  async createWorkOrder(params: {
+    title: string
+    suggestions: string[]
+    priority?: string
+    assignee?: string
+    remark?: string
+  }): Promise<AgentWorkOrder> {
+    const id = `WO-${Date.now().toString().slice(-6)}`
+    const order: AgentWorkOrder = {
+      id,
+      title: params.title,
+      createdAt: new Date().toLocaleString('zh-CN'),
+      status: 'pending',
+      assignee: params.assignee,
+      remark: params.remark ?? (params.suggestions?.length ? params.suggestions.join('；') : undefined),
+    }
+    // 模拟写入后端工单库
+    mockWorkOrders.unshift(order)
+    return delay(order, 700)
+  },
+
+  // 人工直接创建工单（人驱动通道）
+  async createWorkOrderManual(params: {
+    title: string
+    status?: AgentWorkOrder['status']
+    assignee?: string
+    remark?: string
+    images?: string[]
+  }): Promise<AgentWorkOrder> {
+    const id = `WO-${Date.now().toString().slice(-6)}`
+    const order: AgentWorkOrder = {
+      id,
+      title: params.title,
+      createdAt: new Date().toLocaleString('zh-CN'),
+      status: params.status ?? 'pending',
+      assignee: params.assignee,
+      remark: params.remark,
+      images: params.images,
+    }
+    mockWorkOrders.unshift(order)
+    return delay(order, 600)
+  },
+
+  // 分页查询巡护工单列表
+  async getWorkOrders(params?: { page?: number; pageSize?: number }): Promise<PageResponse<AgentWorkOrder>> {
+    const page = params?.page ?? 1
+    const pageSize = params?.pageSize ?? 10
+    return delay(paginate(mockWorkOrders, page, pageSize))
+  },
+
+  // 人工更新工单状态
+  async updateWorkOrderStatus(id: string, status: AgentWorkOrder['status']): Promise<AgentWorkOrder> {
+    const order = mockWorkOrders.find((o) => o.id === id)
+    if (!order) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    order.status = status
+    return delay({ ...order }, 400)
+  },
+
+  // 编辑工单（标题/派发人/备注/图片）
+  async updateWorkOrder(id: string, payload: { title?: string; assignee?: string; remark?: string; images?: string[] }): Promise<AgentWorkOrder> {
+    const order = mockWorkOrders.find((o) => o.id === id)
+    if (!order) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    if (payload.title !== undefined) order.title = payload.title
+    if (payload.assignee !== undefined) order.assignee = payload.assignee
+    if (payload.remark !== undefined) order.remark = payload.remark
+    if (payload.images !== undefined) order.images = payload.images
+    return delay({ ...order }, 400)
+  },
+
+  // 删除工单
+  async deleteWorkOrder(id: string): Promise<{ message: string }> {
+    const idx = mockWorkOrders.findIndex((o) => o.id === id)
+    if (idx < 0) {
+      return delayReject(`未找到工单 ${id}`)
+    }
+    mockWorkOrders.splice(idx, 1)
+    return delay({ message: '删除成功' })
   },
 
   async generateReport(params?: { period?: string }): Promise<AgentReply> {

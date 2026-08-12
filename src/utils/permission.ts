@@ -6,8 +6,8 @@ type PermissionUserLike = {
 
 const ROLE_PERMISSION_MAP: Record<string, string[]> = {
   超级管理员: ['all'],
-  普通监测员: ['home:view', 'home:gis', 'images:view', 'images:live', 'images:query', 'data:view', 'devices:view', 'species:view', 'species:animal', 'species:plant', 'ops:view', 'env:view', 'agent:view'],
-  组织负责人: ['home:view', 'home:gis', 'images:view', 'images:live', 'images:query', 'data:view', 'devices:view', 'species:view', 'species:animal', 'species:plant', 'orgs:view', 'ops:view', 'env:view', 'agent:view'],
+  普通监测员: ['home:view', 'home:gis', 'images:view', 'images:live', 'images:query', 'data:view', 'devices:view', 'species:view', 'species:animal', 'species:plant', 'ops:view', 'env:view', 'agent:view', 'patrol:view'],
+  组织负责人: ['home:view', 'home:gis', 'images:view', 'images:live', 'images:query', 'data:view', 'devices:view', 'species:view', 'species:animal', 'species:plant', 'orgs:view', 'ops:view', 'env:view', 'agent:view', 'patrol:view'],
 }
 
 /**
