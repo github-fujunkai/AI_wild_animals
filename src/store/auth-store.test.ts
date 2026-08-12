@@ -28,6 +28,7 @@ describe('useAuthStore', () => {
           displayName: 'Test User',
           roleId: '1',
           roleName: '管理员',
+          orgName: '测试组织',
           permissions: ['all'],
           mustChangePassword: true,
         },
@@ -83,6 +84,7 @@ describe('useAuthStore', () => {
           displayName: 'New User',
           roleId: '0',
           roleName: '普通监测员',
+          orgName: '测试组织',
           permissions: ['home:view'],
           mustChangePassword: true,
         },
@@ -101,6 +103,7 @@ describe('useAuthStore', () => {
           displayName: 'Tenant Admin 2',
           roleId: '0',
           roleName: '租户管理员',  // Not in ROLE_PERMISSION_MAP
+          orgName: '测试组织',
           permissions: [],  // No explicit permissions
           mustChangePassword: false,
           tenantId: '2',
@@ -130,6 +133,7 @@ describe('useAuthStore', () => {
           displayName: 'Super Admin in Tenant',
           roleId: '1',
           roleName: '超级管理员',
+          orgName: '测试组织',
           permissions: ['all'],
           mustChangePassword: false,
           tenantId: '3',
@@ -152,6 +156,7 @@ describe('useAuthStore', () => {
           displayName: '超级管理员',
           roleId: '1',
           roleName: '超级管理员',
+          orgName: '全部',
           permissions: ['all'],
           mustChangePassword: false,
         },
@@ -175,6 +180,7 @@ describe('useAuthStore', () => {
           displayName: 'Test User',
           roleId: '1',
           roleName: '管理员',
+          orgName: '测试组织',
           permissions: ['home:view'],
           mustChangePassword: true,
         },
@@ -223,7 +229,7 @@ describe('useAuthStore', () => {
           displayName: 'Admin',
           roleId: '1',
           permissions: ['all'],
-        },
+        } as any,
       })
 
       const state = useAuthStore.getState()
@@ -239,7 +245,7 @@ describe('useAuthStore', () => {
           displayName: 'Regular',
           roleId: '2',
           permissions: ['home:view'],
-        },
+        } as any,
       })
 
       const state = useAuthStore.getState()
@@ -255,6 +261,7 @@ describe('useAuthStore', () => {
           displayName: 'Custom',
           roleId: '5',
           roleName: '自定义角色',
+          orgName: '测试组织',
           permissions: ['home:view'],
         },
       })
@@ -293,7 +300,7 @@ describe('useAuthStore', () => {
           roleId: '1',
           roleName: '超级管理员',
           permissions: ['all'],
-        },
+        } as any,
       })
 
       const state = useAuthStore.getState()
@@ -314,6 +321,7 @@ describe('useAuthStore', () => {
           displayName: 'All Modules Admin',
           roleId: '0',
           roleName: '租户管理员',  // Not in ROLE_PERMISSION_MAP, so resolvePermissions returns []
+          orgName: '测试组织',
           permissions: [],  // Empty permissions triggers tenantModules mapping
           mustChangePassword: false,
           tenantId: '10',
@@ -344,6 +352,8 @@ describe('useAuthStore', () => {
           username: 'unknownmod',
           displayName: 'Unknown Module',
           roleId: '1',
+          roleName: '管理员',
+          orgName: '测试组织',
           permissions: [],
           mustChangePassword: false,
           tenantId: '11',
@@ -364,6 +374,8 @@ describe('useAuthStore', () => {
           username: 'emptymod',
           displayName: 'Empty Modules',
           roleId: '1',
+          roleName: '管理员',
+          orgName: '测试组织',
           permissions: ['home:view'],
           mustChangePassword: false,
           tenantId: '12',
@@ -387,6 +399,7 @@ describe('useAuthStore', () => {
           displayName: 'Tenant Clear',
           roleId: '1',
           roleName: '管理员',
+          orgName: '测试组织',
           permissions: ['all'],
           mustChangePassword: false,
           tenantId: '5',
