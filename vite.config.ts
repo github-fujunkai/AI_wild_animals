@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
   },
-  base: '/',
+  base: '/ai-wild-animals/',
   build: {
     sourcemap: 'hidden',
   },
