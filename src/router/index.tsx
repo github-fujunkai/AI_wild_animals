@@ -1,5 +1,5 @@
 import { Button, Result } from 'antd'
-import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { EcoAgentPage } from '@/pages/agent/EcoAgentPage'
 import DevicesPage from '@/pages/devices/DevicesPage'
@@ -35,6 +35,8 @@ function RequireAuth() {
 }
 
 function AppNotFound() {
+  const navigate = useNavigate()
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0b141d]">
       <Result
@@ -42,7 +44,7 @@ function AppNotFound() {
         title="页面不存在"
         subTitle="请返回有效的一期模块页面。"
         extra={
-          <Button type="primary" href="/home">
+          <Button type="primary" onClick={() => navigate('/home')}>
             返回首页
           </Button>
         }

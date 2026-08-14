@@ -4,6 +4,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { AppRouter } from '@/router'
 
 export default function App() {
+  const basename = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '')
+
   return (
     <ConfigProvider
       locale={zhCN}
@@ -78,7 +80,7 @@ export default function App() {
       }}
     >
       <AntApp>
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <AppRouter />
         </BrowserRouter>
       </AntApp>
