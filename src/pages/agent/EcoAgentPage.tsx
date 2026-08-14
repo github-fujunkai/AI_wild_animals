@@ -2,11 +2,9 @@ import {
   AlertOutlined,
   BarChartOutlined,
   ClockCircleOutlined,
-  CloseOutlined,
   DatabaseOutlined,
   EnvironmentOutlined,
   FileTextOutlined,
-  PictureOutlined,
   ReloadOutlined,
   RobotOutlined,
   SendOutlined,
@@ -17,17 +15,16 @@ import {
 import { Avatar, Badge, Button, Collapse, Empty, Input, Spin, Table, Tag, Tooltip } from 'antd'
 import type { CollapseProps } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ChangeEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import ReactECharts from 'echarts-for-react'
 import { agentApi } from '@/services/api'
-import type { AgentDataSource, AgentRecognitionEngine, AgentReply, AgentReplyBlock, AgentSession, AgentToolCall, AgentWorkOrder } from '@/services/api'
+import type { AgentDataSource, AgentReply, AgentReplyBlock, AgentSession, AgentToolCall, AgentWorkOrder } from '@/services/api'
 
 type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
   content?: string
-  image?: string
   reply?: AgentReply
   loading?: boolean
   time: string
@@ -51,7 +48,7 @@ const WELCOME_MESSAGE: ChatMessage = {
       {
         type: 'text',
         content:
-          '您好！我是生态监测 AI Agent（受控智能体）🤖\n\n我基于 LLM + RAG 检索增强，并具备受控的工具调用能力，可以自主规划并调用以下只读工具完成分析：\n\n• � 查询监测数据 — 检索近7天抓拍、识别与设备运行数据\n• � 查询告警 — 获取告警事件、级别与分布\n• � 查询点位信息 — 获取各监测点位与区域信息\n\n🧠 我每步都会展示思考过程与工具调用日志，全程透明可溯源。\n\n� 受控边界：我仅执行只读查询，不会修改任何业务数据，也不会自动创建工单；涉及巡护处置时我会给出建议，由您确认后执行。\n\n请描述您的问题，例如「分析最近一周的告警情况」。',
+          '您好！我是生态监测 AI 助手，已接入物种知识库、历史监测、环境监测、设备运行与告警记录 5 类数据源，可帮您查数、看趋势、出报告。\n\n您可以这样问我：\n• 📊 分析最近一周的告警情况\n• 🦌 近期哪些物种活动较多\n• 📝 生成本月生态监测报告\n• ⚠️ 哪些区域告警频率最高\n• 🔋 对比本月与上月设备运行状态\n\n🔒 我仅做只读查询与参考分析，不会修改业务数据，也不会自动创建工单；涉及巡护处置时，我会先给出建议，由您确认后再生成工单。',
       },
       {
         type: 'stats',
@@ -391,12 +388,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         {isUser ? (
           <div className="rounded-2xl rounded-tr-sm bg-emerald-600/80 px-4 py-2.5 text-sm leading-relaxed text-white">
             {message.content}
-            {message.image && (
-              <div className="mt-2">
-                <img src={message.image} alt="上传影像" className="max-h-56 rounded-lg border border-white/20" />
-                <div className="mt-1 text-[11px] text-emerald-100/80">📷 已上传红外影像，请求 AI 辅助研判</div>
-              </div>
-            )}
           </div>
         ) : (
           <div className="space-y-3 rounded-2xl rounded-tl-sm border border-white/[0.06] bg-white/[0.04] px-4 py-3">
@@ -420,19 +411,15 @@ export function EcoAgentPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [dataSources, setDataSources] = useState<AgentDataSource[]>([])
-  const [recognitionEngine, setRecognitionEngine] = useState<AgentRecognitionEngine>()
   const [quickQuestions, setQuickQuestions] = useState<string[]>([])
   const [sessions, setSessions] = useState<AgentSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>()
-  const [image, setImage] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     agentApi.getDataSources().then(setDataSources)
-    agentApi.getRecognitionEngine().then(setRecognitionEngine)
     agentApi.getQuickQuestions().then(setQuickQuestions)
     agentApi.getSessions().then(setSessions)
   }, [])
@@ -442,16 +429,14 @@ export function EcoAgentPage() {
   }, [messages])
 
   const handleSend = useCallback(
-    async (text?: string, withImage?: string | null) => {
+    async (text?: string) => {
       const content = (text ?? input).trim()
-      const imageToSend = withImage !== undefined ? withImage : image
-      if ((!content && !imageToSend) || loading) return
+      if (!content || loading) return
 
       const userMsg: ChatMessage = {
         id: nextMsgId(),
         role: 'user',
         content,
-        image: imageToSend ?? undefined,
         time: nowTime(),
       }
       const loadingMsg: ChatMessage = {
@@ -462,11 +447,10 @@ export function EcoAgentPage() {
       }
       setMessages((prev) => [...prev, userMsg, loadingMsg])
       setInput('')
-      setImage(null)
       setLoading(true)
 
       try {
-        const reply = await agentApi.sendMessage(content, imageToSend ?? undefined)
+        const reply = await agentApi.sendMessage(content)
         setMessages((prev) =>
           prev.map((m) =>
             m.id === loadingMsg.id
@@ -496,23 +480,13 @@ export function EcoAgentPage() {
         inputRef.current?.focus()
       }
     },
-    [input, image, loading],
+    [input, loading],
   )
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setImage(String(reader.result))
-    reader.readAsDataURL(file)
-    e.target.value = ''
-  }
 
   const handleNewChat = () => {
     setMessages([WELCOME_MESSAGE])
     setActiveSessionId(undefined)
     setInput('')
-    setImage(null)
     inputRef.current?.focus()
   }
 
@@ -539,7 +513,7 @@ export function EcoAgentPage() {
             <h2 className="text-base font-semibold text-slate-50">生态监测 AI Agent</h2>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <Badge status="success" />
-              <span>受控智能体 · LLM+RAG · 工具调用 · 已接入 6 个数据源</span>
+              <span>已接入 6 个数据源</span>
             </div>
           </div>
         </div>
@@ -577,37 +551,12 @@ export function EcoAgentPage() {
               <span className="mt-0.5 shrink-0">💡</span>
               <span>AI 输出内容仅供业务参考，不执行任何业务写操作；正式上报请核对原始监测数据。</span>
             </div>
-            {image && (
-              <div className="mb-2 flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] p-2">
-                <img src={image} alt="待研判影像" className="h-16 w-16 rounded object-cover" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium text-slate-200">红外影像待研判</div>
-                  <div className="text-[11px] text-slate-500">将联动 AI 识别引擎 + 物种知识库进行辅助研判，结果仅供参考</div>
-                </div>
-                <Button size="small" type="text" icon={<CloseOutlined />} onClick={() => setImage(null)} aria-label="移除图片" />
-              </div>
-            )}
             <div className="flex items-end gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Tooltip title="上传红外影像，AI 辅助研判">
-                <Button
-                  icon={<PictureOutlined />}
-                  className="!h-auto"
-                  aria-label="上传图片"
-                  onClick={() => fileInputRef.current?.click()}
-                />
-              </Tooltip>
               <Input.TextArea
                 ref={inputRef as never}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={'输入您的问题，如"近期物种分布情况如何？"，或上传红外影像辅助研判...'}
+                placeholder={'输入您的问题，如"近期物种分布情况如何？"'}
                 autoSize={{ minRows: 1, maxRows: 4 }}
                 onPressEnter={(e) => {
                   if (!e.shiftKey) {
@@ -622,7 +571,7 @@ export function EcoAgentPage() {
                 icon={<SendOutlined />}
                 loading={loading}
                 onClick={() => handleSend()}
-                disabled={!input.trim() && !image}
+                disabled={!input.trim()}
                 className="!h-auto"
               >
                 发送
@@ -661,27 +610,6 @@ export function EcoAgentPage() {
               ))}
             </div>
           </div>
-
-          {/* AI 识别引擎（CV 推理引擎，与 RAG 知识库数据源区分） */}
-          {recognitionEngine && (
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 backdrop-blur-sm">
-              <div className="mb-3 flex items-center gap-2">
-                <PictureOutlined className="text-violet-400" />
-                <span className="text-sm font-semibold text-slate-200">AI 识别引擎</span>
-              </div>
-              <div className="rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Badge status={statusColor[recognitionEngine.status]} />
-                  <span className="truncate text-xs font-medium text-slate-200">{recognitionEngine.name}</span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                  <span>模型版本：{recognitionEngine.modelVersion}</span>
-                  <span>识别准确率：{recognitionEngine.accuracy}%</span>
-                </div>
-                <div className="mt-1 text-[11px] text-slate-500">{recognitionEngine.desc}</div>
-              </div>
-            </div>
-          )}
 
           {/* 快捷问题 */}
           {quickQuestions.length > 0 && (

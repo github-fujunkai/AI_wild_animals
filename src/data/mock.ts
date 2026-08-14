@@ -634,16 +634,6 @@ export const agentDataSources = [
   { name: '告警记录库', status: 'indexing', count: 28, updatedAt: '2024-01-16 11:00', desc: '入侵告警、电量告警、设备离线' },
 ]
 
-// AI 识别引擎（CV 推理引擎，与 RAG 知识库数据源区分，非知识库）
-export const agentRecognitionEngine = {
-  name: 'AI 识别引擎',
-  modelVersion: 'v3.2',
-  status: 'ready',
-  accuracy: 93.4,
-  updatedAt: '2024-01-10 10:00',
-  desc: '动物/人类/车辆红外影像识别模型，支持物种识别与置信度输出',
-}
-
 export const agentQuickQuestions = [
   '近期野生动物物种分布情况如何？',
   '分析最近一周的监测数据趋势',

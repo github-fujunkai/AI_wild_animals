@@ -5,7 +5,6 @@
 import {
   agentDataSources as mockAgentDataSources,
   agentQuickQuestions as mockAgentQuickQuestions,
-  agentRecognitionEngine as mockAgentRecognitionEngine,
   agentSessions as mockAgentSessions,
   alerts as mockAlerts,
   dailySummary as mockDailySummary,
@@ -231,15 +230,6 @@ export type AgentDataSource = {
   name: string
   status: 'ready' | 'indexing' | 'error'
   count: number
-  updatedAt: string
-  desc: string
-}
-
-export type AgentRecognitionEngine = {
-  name: string
-  modelVersion: string
-  status: 'ready' | 'indexing' | 'error'
-  accuracy: number
   updatedAt: string
   desc: string
 }
@@ -1471,10 +1461,6 @@ export const agentApi = {
 
   async getDataSources(): Promise<AgentDataSource[]> {
     return delay(mockAgentDataSources as AgentDataSource[])
-  },
-
-  async getRecognitionEngine(): Promise<AgentRecognitionEngine> {
-    return delay(mockAgentRecognitionEngine as AgentRecognitionEngine)
   },
 
   async getQuickQuestions(): Promise<string[]> {
